@@ -1,0 +1,79 @@
+/* App.css */
+body {
+  background-color: #f4f4f4;
+}
+
+
+.custom-header {
+  font-size: 2rem;
+  color: #333;
+  text-align: center;
+  padding: 20px;
+  background-color: #007bff;
+  color: white;
+}
+
+.custom-button {
+  background-color: #28a745;
+  border: none;
+  padding: 10px 20px;
+  color: white;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.custom-button:hover {
+  background-color: #218838;
+}
+.trade-form-wrapper {
+  margin-top: 65px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px; 
+}
+.btc-chart-wrapper {
+
+  
+}
+.btc-chart-content {
+}
+
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Sets container to the full viewport height */
+  padding: 10px;
+}
+
+.trade-form {
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: #f8f9fa;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional shadow for better appearance */
+}
+
+.form-wrapper {
+  display: flex;
+  align-items: center;
+  flex-direction: column; 
+  justify-content: center;
+  min-height: 100%;
+  padding: 20px;
+}
+
+.trade-form .form-control {
+  margin-bottom: 15px;
+}
+
+.trade-form button {
+  width: 100%; /* Make the button full width */
+}
+
+
+@media (max-width: 768px) {
+  .trade-form {
+    width: 80%; /* Make the form responsive on smaller screens */
+  }
+}

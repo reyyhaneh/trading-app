@@ -1,0 +1,56 @@
+[
+  {
+    "id": "94521e2b-dda0-468d-aa5a-e52cd76376ea",
+    "type": "buy",
+    "stockSymbol": "BTC",
+    "amount": "0.000656",
+    "price": "41",
+    "date": "2024-10-08T07:03:29.144Z",
+    "user": "rey1@example.com"
+  },
+  {
+    "id": "d5094966-37c1-49c1-9737-c509ae122511",
+    "type": "buy",
+    "stockSymbol": "BTC",
+    "amount": "0.000656",
+    "price": "41",
+    "date": "2024-10-08T07:09:26.116Z",
+    "user": "rey1@example.com"
+  },
+  {
+    "id": "84027759-e21d-4d2b-9d93-f9930e5aaf83",
+    "type": "buy",
+    "stockSymbol": "BTC",
+    "amount": "0.000656",
+    "price": "41",
+    "date": "2024-10-08T07:10:12.720Z",
+    "user": "rey1@example.com"
+  },
+  {
+    "id": "bb64e41b-67d0-4f82-8cba-f3dd1eeef196",
+    "type": "buy",
+    "stockSymbol": "BTC",
+    "amount": "0.000656",
+    "price": "41",
+    "date": "2024-10-08T07:13:58.673Z",
+    "user": "rey1@example.com"
+  },
+  {
+    "id": "a1076584-9abb-4423-8b57-78121dbfb490",
+    "type": "buy",
+    "stockSymbol": "BTC",
+    "amount": "0.000656",
+    "price": "41",
+    "date": "2024-10-08T07:14:41.060Z",
+    "user": "rey1@example.com"
+  },
+  {
+    "id": "102fb491-7649-489a-83ed-c0ca739e4f0e",
+    "type": "buy",
+    "stockSymbol": "BTC",
+    "amount": "0.999999",
+    "price": "68830.96",
+    "date": "2024-11-05T12:17:27.855Z",
+    "user": "reyhoondavaee@gmail.com"
+  }
+]

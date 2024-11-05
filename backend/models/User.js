@@ -30,7 +30,7 @@ const { stringify } = require('querystring');
 
 
 // File path for storing user data in JSON format
-const filePath = path.join(__dirname, 'users.json');
+const filePath = path.join(__dirname, '../data/users.json');
 
 const readUsersFromFile = () => {
   // if the file doesn't exist, create a new file in the same place and write an empty string to it.
@@ -50,6 +50,12 @@ const findUserByEmail = (email) => {
   return users.find(user => user.email === email);
 };
 
+const findVerificationToken = (token) => {
+  const users = readUsersFromFile();
+  return users.find(user => user.verificationToken === token);
+
+}
+
 const saveUser = async (user) => {
   const users = readUsersFromFile();
   const salt = await bcrypt.genSalt(10);
@@ -58,9 +64,55 @@ const saveUser = async (user) => {
   writeUsersToFile(users);
 };
 
+const verifyUser = async (email) => {
+  const user = findUserByEmail(email)
+
+  const updateFields = {
+    isEmailVerified: true,
+    verificationToken: null
+
+  };
+
+  updateUser(user.email, updateFields)
+
+}
+
+const updateUser = (email, updatedFields) => {
+  try {
+    // Step 1: Read the JSON file
+    const data = fs.readFileSync(filePath, 'utf-8');
+    const users = JSON.parse(data);
+
+    // Step 2: Find the user by email
+    const userIndex = users.findIndex(user => user.email === email);
+    if (userIndex === -1) {
+      console.error('User not found');
+      return null;
+    }
+
+    // Step 3: Update the necessary fields
+    const user = users[userIndex];
+    Object.keys(updatedFields).forEach(key => {
+      user[key] = updatedFields[key]; // Update field values
+    });
+
+    // Step 4: Save the updated data back to the JSON file
+    users[userIndex] = user;
+    fs.writeFileSync(filePath, JSON.stringify(users, null, 2), 'utf-8');
+
+    console.log('User updated successfully');
+    return user;
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return null;
+  }
+}
+
 module.exports = {
   findUserByEmail,
   saveUser,
+  findVerificationToken,
+  verifyUser,
 };
 
 
