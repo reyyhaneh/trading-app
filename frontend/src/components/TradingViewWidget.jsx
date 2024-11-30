@@ -1,41 +1,71 @@
+// src/components/TradingViewWidget.jsx
 import React, { useEffect, useRef, memo } from 'react';
 
-function TradingViewWidget() {
+function TradingViewWidget({ selectedSymbol }) {
   const container = useRef(null);
-  const scriptAppended = useRef(false); // Track if the script is already appended
+  const scriptRef = useRef(null); // To track the script element
 
   useEffect(() => {
-    if (container.current && !scriptAppended.current) {
+    // Clean up existing script if it exists
+    if (scriptRef.current) {
+      container.current.innerHTML = '';
+      scriptRef.current = null;
+    }
+
+    if (container.current) {
       const script = document.createElement("script");
       script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
       script.type = "text/javascript";
       script.async = true;
-      script.innerHTML = `
-        {
-          "width": "980",
-          "height": "610",
-          "symbol": "CME:BTC1!",
-          "interval": "D",
-          "timezone": "Etc/UTC",
-          "theme": "light",
-          "style": "1",
-          "locale": "en",
-          "allow_symbol_change": true,
-          "calendar": false,
-          "support_host": "https://www.tradingview.com"
-        }`;
+
+      // Create the configuration object with dynamic watchlist
+      // const config = {
+      //   "width": "100%", // Use percentage for responsiveness
+      //   "height": "610",
+      //   "symbol": "CME:BTC1!",
+      //   "interval": "D",
+      //   "timezone": "Etc/UTC",
+      //   "theme": "light",
+      //   "style": "1",
+      //   "locale": "en",
+      //   "allow_symbol_change": true,
+      //   "calendar": false,
+      //   "widgetbar": {
+      //     "watchlist": true,
+      //     "watchlist_settings": {
+      //       "default_symbols": watchlist,
+      //       "readonly": false, // Allow users to modify the watchlist
+      //     },
+      //   },
+      //   "support_host": "https://www.tradingview.com"
+      // };
+      const config = {
+        width: '100%',
+        height: '610',
+        symbol: selectedSymbol || 'CME:BTC1!',
+        interval: 'D',
+        timezone: 'Etc/UTC',
+        theme: 'light',
+        style: '1',
+        locale: 'en',
+        allow_symbol_change: false,
+        calendar: false,
+      };
+
+
+      script.innerHTML = JSON.stringify(config);
 
       container.current.appendChild(script);
-      scriptAppended.current = true; // Mark as appended
+      scriptRef.current = script;
     }
 
+    // Cleanup function
     return () => {
       if (container.current) {
-        container.current.innerHTML = ''; // Clean up script on unmount
-        scriptAppended.current = false;   // Reset to allow re-adding if needed
+        container.current.innerHTML = ''; // Clean up script on unmount or update
       }
     };
-  }, []);
+  }, [selectedSymbol]); // Re-run when watchlist changes
 
   return (
     <div className="tradingview-widget-container" ref={container}>

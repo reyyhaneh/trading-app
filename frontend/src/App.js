@@ -8,7 +8,7 @@ import Dashboard from  './pages/Dashboard'
 import BitcoinPrice from './components/BitcoinPrice';
 import Navbar from './components/Navbar'
 import Profile from './pages/Profile'
-import 'bootstrap/dist/css/bootstrap.min.css';
+//import 'bootstrap/dist/css/bootstrap.min.css';
 import EmailVerification from './pages/EmailVerification'
 import TradingViewWidget from './pages/TradingViewWidget';
 

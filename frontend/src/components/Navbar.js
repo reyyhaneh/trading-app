@@ -12,34 +12,74 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-light">
-      <ul className="navbar-nav mr-auto">
-        {user ? (
-          <>
-            <li className="nav-item active">
-              <Link className="nav-link" to="/dashboard" >Dashboard </Link>
-            </li>
-            <li>
-              <Link className="nav-link" to="/trade">Trade</Link>
-            </li>
-            <li>
-              <Link className="nav-link" to="/profile">Profile</Link>
-            </li>
-            <li>
-              <button className="btn btn-outline-secondary my-2 my-sm-0" onClick={handleLogout}>Logout</button>
-            </li>
-          </>
-        ) : (
-          <>
-            <li className="nav-item active">
-              <Link className="nav-link" to="/login">Login</Link>
-            </li>
-            <li className="nav-item active">
-              <Link className="nav-link" to="/register">Register</Link>
-            </li>
-          </>
+    <nav className="bg-gray-50 shadow-md py-4 border-b border-gray-200">
+      <div className="container mx-auto flex items-center justify-between">
+        {/* Left Section */}
+        <div className="flex items-center space-x-4">
+          <Link to="/" className="text-xl font-bold text-blue-600">
+            TradingApp
+          </Link>
+          <ul className="flex items-center space-x-4">
+            {user ? (
+              <>
+                <li>
+                  <Link
+                    to="/dashboard"
+                    className="text-gray-700 hover:text-blue-600 transition"
+                  >
+                    Dashboard
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/trade"
+                    className="text-gray-700 hover:text-blue-600 transition"
+                  >
+                    Trade
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/profile"
+                    className="text-gray-700 hover:text-blue-600 transition"
+                  >
+                    Profile
+                  </Link>
+                </li>
+              </>
+            ) : (
+              <>
+                <li>
+                  <Link
+                    to="/login"
+                    className="text-gray-700 hover:text-blue-600 transition"
+                  >
+                    Login
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/register"
+                    className="text-gray-700 hover:text-blue-600 transition"
+                  >
+                    Register
+                  </Link>
+                </li>
+              </>
+            )}
+          </ul>
+        </div>
+
+        {/* Right Section */}
+        {user && (
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
+          >
+            Logout
+          </button>
         )}
-      </ul>
+      </div>
     </nav>
   );
 };
