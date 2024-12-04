@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "cors": "^2.8.5",
-    "uuid": "^10.0.0"
+    "react-search-autocomplete": "^8.5.2"
   }
 }
