@@ -25,16 +25,13 @@ const TradeForm = () => {
     fetchBtcPrice();
   }, []);
 
-  async function buy(formData) {
-    const price = formData.get('price');
-    const amount = formData.get('amount');
-
+  async function buy() {
     const trade = `{
       "stockSymbol" : "BTC",
       "amount" : "${amount}",
       "price" : "${price}"
     }`;
-
+  
     try {
       await tradeService.buyStock(trade);
       alert('Trade executed successfully');
@@ -43,10 +40,7 @@ const TradeForm = () => {
     }
   }
 
-  async function sell(formData) {
-    const price = formData.get('price');
-    const amount = formData.get('amount');
-
+  async function sell() {
     const trade = `{
       "stockSymbol" : "BTC",
       "amount" : "${amount}",

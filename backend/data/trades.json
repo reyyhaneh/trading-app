@@ -52,5 +52,14 @@
     "price": "68830.96",
     "date": "2024-11-05T12:17:27.855Z",
     "user": "reyhoondavaee@gmail.com"
+  },
+  {
+    "id": "b94b4c7b-f776-4825-b715-7fcf4a9aac42",
+    "type": "buy",
+    "stockSymbol": "BTC",
+    "amount": "1",
+    "price": "99759.00",
+    "date": "2024-12-07T12:24:44.041Z",
+    "user": "reyhoondavaee@gmail.com"
   }
 ]

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import SearchBar from './SearchBar';
 
-const Watchlist = ({ selectedSymbol, onSelect, onAddSymbol }) => {
-  const [symbols, setSymbols] = useState(['AAPL', 'GOOG', 'MSFT']); // Sample symbols in watchlist
+const Watchlist = ({ selectedSymbol, onSelect }) => {
+  const [symbols, setSymbols] = useState([]); // Symbols added to the watchlist
+  const predefinedSymbols = ['BTCUSD']; // Predefined symbols
 
   const handleAddSymbol = (symbol) => {
     if (!symbols.includes(symbol)) {
-      setSymbols((prevSymbols) => [...prevSymbols, symbol]); // Add to local list
-      onAddSymbol && onAddSymbol(symbol); // Notify parent if needed
+      setSymbols((prevSymbols) => [...prevSymbols, symbol]); // Add symbol to watchlist
     }
   };
 
@@ -19,7 +19,7 @@ const Watchlist = ({ selectedSymbol, onSelect, onAddSymbol }) => {
       <div className="mb-4">
         <SearchBar 
           onSelectSymbol={handleAddSymbol} 
-          list={symbols} // Passing the test symbol list to SearchBar
+          list={predefinedSymbols.filter((sym) => !symbols.includes(sym))} // Exclude already added symbols
         />
       </div>
 

@@ -1,55 +1,44 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
-const SearchBar = ({ onSelectSymbol, suggestionsList }) => {
+const SearchBar = ({ onSelectSymbol, list }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState([]);
 
-  // If suggestionsList is provided, use it to filter results
-  useEffect(() => {
-    if (suggestionsList) {
-      filterSuggestions(suggestionsList);
-    } else if (searchTerm.trim() === '') {
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    // Filter suggestions based on user input
+    if (value.trim() === '') {
       setSuggestions([]);
     } else {
-      fetchSuggestions(searchTerm);
+      const filtered = list.filter((item) =>
+        item.toLowerCase().includes(value.toLowerCase())
+      );
+      setSuggestions(filtered);
     }
-  }, [searchTerm, suggestionsList]);
-
-  const fetchSuggestions = async (searchTerm) => {
-    try {
-      const response = await fetch('https://scanner.tradingview.com/crypto-coins-screener/scan');
-      console.log(response)
-      const responseData = await response.json();
-
-      const items = responseData.data || [];
-      const filteredSuggestions = items
-        .filter((item) => item.s.toLowerCase().includes(searchTerm.toLowerCase()))
-        .map((item) => ({ name: item.s }));
-
-      setSuggestions(filteredSuggestions);
-    } catch (error) {
-      console.error('Error fetching suggestions:', error);
-    }
-  };
-
-  const filterSuggestions = (list) => {
-    const filtered = list.filter(item => item.toLowerCase().includes(searchTerm.toLowerCase()));
-    setSuggestions(filtered);
   };
 
   const handleSelect = (symbol) => {
-    onSelectSymbol(symbol); // Notify the parent component
+    onSelectSymbol(symbol); // Notify parent component
     setSearchTerm(''); // Clear the input field
     setSuggestions([]); // Clear suggestions
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && suggestions.length > 0) {
+      e.preventDefault();
+      handleSelect(suggestions[0]); // Add the first suggestion on Enter
+    }
+  };
 
   return (
     <div className="relative">
       <input
         type="text"
         value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
+        onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
         placeholder="Search Symbol"
         className="w-full p-2 rounded-md border border-gray-300"
       />
@@ -58,10 +47,10 @@ const SearchBar = ({ onSelectSymbol, suggestionsList }) => {
           {suggestions.map((item, index) => (
             <li
               key={index}
-              onClick={() => handleSelect(item.name)}
+              onClick={() => handleSelect(item)}
               className="cursor-pointer p-2 hover:bg-gray-200"
             >
-              {item.name}
+              {item}
             </li>
           ))}
         </ul>
