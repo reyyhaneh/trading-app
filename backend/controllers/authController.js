@@ -7,7 +7,6 @@ const nodemailer = require('nodemailer');
 
 
 
-
 exports.register = async (req, res) => {
   const { username, email, password } = req.body;
 
@@ -136,26 +135,31 @@ exports.login = async (req, res) => {
 
 
 exports.verifyEmail = async (req, res) => {
-  const token = await req.query.token;
+  const { verificationCode } = req.body;
+  console.log("verificationCode: ", verificationCode)
 
-  try {
-    // Find the user by the token
-    const user = await findVerificationToken(token);
+  try{ 
+    const decoded = jwt.verify(verificationCode, 'meow');
+    const email = decoded.email;
+    console.log("email: ", email)
+    const user = await findUserByEmail(email);
+    console.log("user: ", user)
+
 
     if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired token' });
+      return res.status(404).json({ msg: 'User not found' });
     }
 
-    // Mark the email as verified
-    /*
-    user.isEmailVerified = true;
-    user.emailVerificationToken = undefined; // Clear the token
-*/
+    if (user.verification_code !== verificationCode) {
+      return res.status(400).json({ msg: 'Invalid verification code' });
+    }
+  
+    // Find the user by the token
 
-    verifyUser(user.email)
+    const updatedUser = await verifyEmail(email);
     console.log("user verified")
 
-    res.status(200).json({ message: 'Email verified successfully' });
+    res.status(200).json({ msg: 'Email verified successfully', user: updatedUser });
   } catch (error) {
     console.error('Error verifying email:', error);
     res.status(500).json({ message: 'Something went wrong. Please try again.' });

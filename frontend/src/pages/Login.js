@@ -5,8 +5,8 @@ import authService from '../services/authService';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(''); // State for storing error messages
-  const [message, setMessage] = useState(''); // State for server success messages
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -19,21 +19,17 @@ const Login = () => {
       navigate('/dashboard');
     } catch (error) {
       console.error('Login failed', error);
-
-      // Check if the error has a response object from the server
       if (error.response && error.response.data && error.response.data.msg) {
-        // Display the error message from the server
         setError(error.response.data.msg);
       } else {
-        // If there's no specific server message, display a generic error message
         setError('An error occurred during login. Please try again.');
       }
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-md">
+    <div className="flex items-start justify-center h-screen bg-gray-100 pt-16">
+      <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-md">
         <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">Login</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Email Input */}

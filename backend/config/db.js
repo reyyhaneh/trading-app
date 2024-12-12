@@ -1,42 +1,12 @@
-/*
-const mongoose = require('mongoose');
-const MongoClient = require('mongodb').MongoClient;
+const { Pool } = require('pg');
 
-const uri = "mongodb+srv://reyhaneh:j4db462c@cluster0.l25bka3.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+// PostgreSQL connection configuration
+const pool = new Pool({
+  user: 'reyhaneh',
+  host: 'localhost',
+  database: 'trading_app',
+  password: 'njrfiugf',
+  port: 5432, // Default PostgreSQL port
+});
 
-  
-const connectDB = async () => {  
-    try {  
-     const client = await MongoClient.connect(uri, {  
-      useNewUrlParser: true,  
-      useUnifiedTopology: true  
-     });  
-     const db = client.db();  
-     console.log('Connected to MongoDB');  
-     return db;  
-    } catch (err) {  
-     console.error(err);  
-     process.exit(1);  
-    }  
-  };  
-/*
-const connectDB = async () => {
-  try {
-    await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('MongoDB connected...');
-  } catch (err) {
-    console.error(err.message);
-    process.exit(1);
-  }
-};
-*/
-
-
-const connectDB = async() => {
-  console.log("Connected to database.")
-}
-
-module.exports = connectDB;
+module.exports = pool;

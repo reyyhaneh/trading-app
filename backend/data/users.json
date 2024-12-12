@@ -12,5 +12,19 @@
     "password": "$2a$10$fpdvHmJ5kj.2./AI0S/Hsep.yUh0h0FzO0ml7/ITIPEhoQhn0fGyS",
     "verificationToken": null,
     "isEmailVerified": true
+  },
+  {
+    "username": "tt",
+    "email": "reyhaneh@gmail.com",
+    "password": "$2a$10$6X0fnfvrowwCLv7m3.6JD.U3m9RjAg1oT/0DnOHS78cmF6nIlpTv6",
+    "verificationToken": "10a1d2c25dbcb7460d9e40e5c9401f5cac62daf536083599e70dba95f6e3f4e9",
+    "isEmailVerified": false
+  },
+  {
+    "username": "ret",
+    "email": "rey@gtmail.com",
+    "password": "$2a$10$/GXL9uNR8htZew.xGzzQWOlautGUpgPsrIaZhukGODmTFoeqGpYlK",
+    "verificationToken": null,
+    "isEmailVerified": true
   }
 ]

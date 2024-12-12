@@ -13,6 +13,7 @@ const tradeRoutes = require('./routes/trade');
 const priceRoutes = require('./routes/price');
 const profileRoutes = require('./routes/profile');
 
+const pool = require('./config/db'); // PostgreSQL connection (./db.js)
 
 
 var cors = require('cors')
@@ -33,7 +34,15 @@ app.use(session({
 
 
 // Connect to the database
-connectDB();
+// Test Database Connection
+pool.query('SELECT NOW()', (err, res) => {
+  if (err) {
+    console.error('Database connection failed:', err.stack);
+  } else {
+    console.log('Database connected:', res.rows[0]);
+  }
+});
+
 
 // Middleware
 app.use(bodyParser.json());
