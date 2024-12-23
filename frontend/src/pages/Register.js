@@ -13,7 +13,7 @@ const Register = () => {
     e.preventDefault();
     try {
       await authService.register({ username, email, password });
-      navigate('/login');
+      navigate('/verify-email');
     } catch (error) {
       console.error('Registration failed', error);
 

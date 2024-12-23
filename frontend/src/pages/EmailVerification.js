@@ -11,9 +11,11 @@ const VerifyEmail = () => {
   const token = searchParams.get('token'); // Retrieve the token from the query string
   const navigate = useNavigate();
 
+
   const handleVerification = async () => {
     try {
       // Send verification request to the backend
+      
       const response = await axios.post(
         'http://localhost:5000/api/auth/verify-email',
         { token, verificationCode }
