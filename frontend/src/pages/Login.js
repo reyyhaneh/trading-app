@@ -1,38 +1,40 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import authService from '../services/authService';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const location = useLocation(); // Get the passed state
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await authService.login({ email, password });
-      if (response.data) {
-        setMessage(response.data.message);
-      }
+      await authService.login({ email, password });
       navigate('/dashboard');
     } catch (error) {
       console.error('Login failed', error);
       if (error.response && error.response.data && error.response.data.msg) {
         setError(error.response.data.msg);
       } else {
-        setError('An error occurred during login. Please try again.');
+        setError('Invalid credentials');
       }
     }
   };
 
+  const message = location.state?.message; // Access the passed message
+
   return (
     <div className="flex items-start justify-center h-screen bg-gray-100 pt-16">
       <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-md">
+        {/* Display message if present */}
+        {message && <p className="text-green-600 text-center mb-4">{message}</p>}
+        
         <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">Login</h2>
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Email Input */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
               Email
@@ -42,12 +44,10 @@ const Login = () => {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              placeholder="Enter your email"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              required
             />
           </div>
-
-          {/* Password Input */}
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Password
@@ -57,12 +57,10 @@ const Login = () => {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              placeholder="Enter your password"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              required
             />
           </div>
-
-          {/* Submit Button */}
           <div>
             <button
               type="submit"
@@ -71,11 +69,8 @@ const Login = () => {
               Login
             </button>
           </div>
+          {error && <p className="text-red-600 text-center mt-4">{error}</p>}
         </form>
-
-        {/* Success and Error Messages */}
-        {message && <p className="mt-4 text-center text-green-600">{message}</p>}
-        {error && <p className="mt-4 text-center text-red-600">{error}</p>}
       </div>
     </div>
   );

@@ -11,26 +11,15 @@ const VerifyEmail = () => {
   const token = searchParams.get('token'); // Retrieve the token from the query string
   const navigate = useNavigate();
 
-
   const handleVerification = async () => {
     try {
-      // Send verification request to the backend
-      
       const response = await axios.post(
         'http://localhost:5000/api/auth/verify-email',
-        { token, verificationCode }
+        { verificationCode }
       );
-
-      // Assuming the backend sends back a token upon successful verification
-      const loginResponse = await authService.login({
-        email: response.data.email, // Replace with the email from the response
-        password: response.data.password, // Replace with the temporary password or actual password
-      });
-
-      if (loginResponse) {
-        setMessage('Verification successful. Redirecting to your dashboard...');
-        navigate('/dashboard'); // Redirect to the dashboard
-      }
+  
+      // Redirect to the login page with a message
+      navigate('/login', { state: { message: response.data.msg } });
     } catch (error) {
       console.error('Verification failed:', error);
       if (error.response && error.response.data && error.response.data.msg) {
@@ -40,6 +29,7 @@ const VerifyEmail = () => {
       }
     }
   };
+  
 
   return (
     <div className="flex items-start justify-center h-screen bg-gray-100 pt-16">

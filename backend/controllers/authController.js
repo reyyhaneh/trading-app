@@ -1,4 +1,4 @@
-const { findByEmail, create,saveUser,findVerificationToken,verifyUser } = require('../models/User');
+const { findByEmail, create, verifyEmail} = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
@@ -11,31 +11,40 @@ exports.register = async (req, res) => {
   const { username, email, password } = req.body;
 
   try {
-    // Await the result of the database query
+    // Check if the user already exists
     const existingUser = await findByEmail(email);
-    
     if (existingUser) {
-      console.log(existingUser); // Log the actual user
+      console.log(existingUser); // Log the existing user for debugging
       return res.status(400).json({ msg: 'User already exists' });
     }
 
-    // Email verification
+    // Hash the password
 
-    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-
+    // Create the user object
     const user = {
       username,
       email,
-      password,
-      verificationToken,
-      isEmailVerified : false,
-      
+      password: hashedPassword,
+      isEmailVerified: false,
     };
 
+    // Generate a verification token (JWT)
+    const verificationToken = jwt.sign(
+      { email: user.email }, // Include the email in the token payload
+      'meow', // Secret key
+      { expiresIn: '1h' } // Token expires in 1 hour
+    );
+
+    // Add the verification token to the user object
+    user.verificationToken = verificationToken;
+
+    // Save the user to the database
     await create(user);
 
-    // Generate JWT
+    // Generate an authentication JWT
     const payload = {
       user: {
         email: user.email,
@@ -48,66 +57,66 @@ exports.register = async (req, res) => {
       { expiresIn: 3600 },
       (err, token) => {
         if (err) throw err;
-        res.json({ token });
+
+        // Send email verification link
+        const verificationUrl = `http://localhost:3000/verify-email?token=${verificationToken}`;
+        const transporter = nodemailer.createTransport({
+          host: 'smtp.ethereal.email',
+          port: 587,
+          secure: false,
+          auth: {
+            user: 'glenda.osinski@ethereal.email',
+            pass: 'fTg2T7YVpe4j2cnvyA',
+          },
+        });
+
+        const mailOptions = {
+          to: user.email,
+          from: 'noreply@example.com',
+          subject: 'Email Verification',
+          text: `Click the link to verify your email: ${verificationUrl}`,
+        };
+
+        transporter.sendMail(mailOptions, (err, info) => {
+          if (err) {
+            console.error('Error sending email:', err);
+            return res.status(500).json({ message: 'Error sending verification email' });
+          }
+
+          res.status(200).json({
+            token,
+            message: 'Registration successful. Please verify your email.',
+          });
+        });
       }
     );
-
-    // send email
-    const verificationUrl = `http://localhost:3000/verify-email/${verificationToken}`;
-
-
-    const transporter = nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      secure: false, // true for port 465, false for other ports
-      auth: {
-        user: "glenda.osinski@ethereal.email",
-        pass: "fTg2T7YVpe4j2cnvyA",
-      },
-    });
-    
-
-    const mailOptions = {
-      to: user.email,
-      from: 'noreply@example.com',
-      subject: 'Email Verification',
-      text: `Click the link to verify your email: ${verificationUrl}`,
-    };
-
-    transporter.sendMail(mailOptions, (err, info) => {
-      if (err) {
-        console.error('Error sending email:', err);
-        return res.status(500).json({ message: 'Error sending verification email' });
-      }
-      res.status(200).json({ message: 'Registration successful. Please verify your email.' });
-    });
-
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
   }
 };
 
-
-
 exports.login = async (req, res) => {
   
   const { email, password } = req.body;
 
   try {
-    const user = findUserByEmail(email);
+    const user = await findByEmail(email);
+    console.log('Login user:', user); // Ensure this includes is_email_verified
+
+
     if (!user) {
       return res.status(400).json({ msg: 'Invalid credentials' });
-    } else if (! user.isEmailVerified){
-      return res.status(401).json({msg:"Email not verified."})
-
+    } else if (! user.is_email_verified){
+      return res.status(401).json({msg:"Email not verifieds."})
     }
 
+
+    // Compare the provided password with the hashed password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ msg: 'Invalid credentials' });
     }
-
     // Generate JWT
     const payload = {
       user: {
@@ -147,7 +156,7 @@ exports.verifyEmail = async (req, res) => {
     console.log('Decoded email from token: ', email);
 
     // Find user by email
-    const user = await findUserByEmail(email);
+    const user = await findByEmail(email);
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
     }
@@ -161,7 +170,7 @@ exports.verifyEmail = async (req, res) => {
     const updatedUser = await verifyEmail(email); // Update the user in the database
     console.log('User email verified successfully');
 
-    res.status(200).json({ msg: 'Email verified successfully', user: updatedUser });
+    res.status(200).json({ msg: 'Email verified successfully. Please login.', user: updatedUser });
   } catch (error) {
     console.error('Error verifying email:', error);
 

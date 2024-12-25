@@ -25,6 +25,22 @@ const User = {
       throw error;
     }
   },
-}
+
+  async verifyEmail(email) {
+    try {
+      const result = await pool.query(
+        `UPDATE users
+         SET is_email_verified = true
+         WHERE email = $1
+         RETURNING *`,
+        [email]
+      );
+      return result.rows[0]; // Return the updated user
+    } catch (error) {
+      console.error('Error verifying email:', error);
+      throw error;
+    }
+  },
+};
 
 module.exports = User;
