@@ -1,44 +1,20 @@
-// src/components/TradingViewWidget.jsx
 import React, { useEffect, useRef, memo } from 'react';
 
 function TradingViewWidget({ selectedSymbol }) {
-  const container = useRef(null);
-  const scriptRef = useRef(null); // To track the script element
+  const containerRef = useRef(null);
+  const isScriptAdded = useRef(false); // Track if the script has been added
 
   useEffect(() => {
-    // Clean up existing script if it exists
-    if (scriptRef.current) {
-      container.current.innerHTML = '';
-      scriptRef.current = null;
-    }
+    // Prevent re-initialization if the script already exists
+    if (isScriptAdded.current) return;
 
-    if (container.current) {
-      const script = document.createElement("script");
-      script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
-      script.type = "text/javascript";
+    if (containerRef.current) {
+      const script = document.createElement('script');
+      script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+      script.type = 'text/javascript';
       script.async = true;
 
-      // Create the configuration object with dynamic watchlist
-      // const config = {
-      //   "width": "100%", // Use percentage for responsiveness
-      //   "height": "610",
-      //   "symbol": "CME:BTC1!",
-      //   "interval": "D",
-      //   "timezone": "Etc/UTC",
-      //   "theme": "light",
-      //   "style": "1",
-      //   "locale": "en",
-      //   "allow_symbol_change": true,
-      //   "calendar": false,
-      //   "widgetbar": {
-      //     "watchlist": true,
-      //     "watchlist_settings": {
-      //       "default_symbols": watchlist,
-      //       "readonly": false, // Allow users to modify the watchlist
-      //     },
-      //   },
-      //   "support_host": "https://www.tradingview.com"
-      // };
+      // Widget configuration
       const config = {
         width: '100%',
         height: '610',
@@ -52,26 +28,28 @@ function TradingViewWidget({ selectedSymbol }) {
         calendar: false,
       };
 
-
       script.innerHTML = JSON.stringify(config);
 
-      container.current.appendChild(script);
-      scriptRef.current = script;
+      // Append script to container
+      containerRef.current.appendChild(script);
+      isScriptAdded.current = true; // Mark script as added
     }
 
-    // Cleanup function
     return () => {
-      if (container.current) {
-        container.current.innerHTML = ''; // Clean up script on unmount or update
+      // Cleanup on unmount
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+        isScriptAdded.current = false; // Reset flag
       }
     };
-  }, [selectedSymbol]); // Re-run when watchlist changes
+  }, [selectedSymbol]);
 
   return (
-    <div className="tradingview-widget-container" ref={container}>
+    <div className="tradingview-widget-container" ref={containerRef}>
       <div className="tradingview-widget-container__widget"></div>
       <div className="tradingview-widget-copyright">
         <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
+          TradingView Chart
         </a>
       </div>
     </div>
