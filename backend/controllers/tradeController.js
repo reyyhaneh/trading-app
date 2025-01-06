@@ -1,49 +1,83 @@
-const { readTradesFromFile, writeTradesToFile, findTradeById, saveTrade } = require('../models/Trade');
-const { v4: uuidv4 } = require('uuid');
+const Trade = require('../models/Trade');
 
-
-exports.buyStock = (req, res) => {
+// Buy Stock
+exports.buyStock = async (req, res) => {
   const { stockSymbol, amount, price } = req.body;
 
-  const trade = {
-    id: uuidv4(),
-    type: 'buy',
-    stockSymbol,
-    amount,
-    price,
-    date: new Date().toISOString(),
-    user: req.user.email,  // Assuming user is added to the request by auth middleware
-  };
+  try {
+    console.log("stock symbol: ", stockSymbol)
+    console.log("amount: ", amount)
+    console.log("price: ", price)
+    // Ensure all necessary data is provided
+    if (!stockSymbol || !amount || !price) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
 
-  // Here you would add the logic to handle the actual buying of stocks via the API
+    // Create the trade object
+    const trade = {
+      userId: req.user.id, // Retrieved from auth middleware
+      type: 'buy',
+      stockSymbol,
+      amount,
+      price,
+      date: new Date().toISOString(), // Current time in ISO format
+    };
 
-  saveTrade(trade);
+    console.log("trade", trade)
 
-  res.status(201).json({ msg: 'Buy trade recorded', trade });
+    // Save the trade to the database
+    const savedTrade = await Trade.addTrade(trade);
+
+    res.status(201).json({ msg: 'Buy trade recorded successfully', trade: savedTrade });
+  } catch (err) {
+    console.error('Error recording buy trade:', err.message || err);
+    res.status(500).json({ error: 'Failed to record buy trade. Please try again later.' });
+  }
 };
 
-exports.sellStock = (req, res) => {
+// Sell Stock
+exports.sellStock = async (req, res) => {
   const { stockSymbol, amount, price } = req.body;
 
-  const trade = {
-    id: uuidv4(),
-    type: 'sell',
-    stockSymbol,
-    amount,
-    price,
-    date: new Date().toISOString(),
-    user: req.user.email,  // Assuming user is added to the request by auth middleware
-  };
+  try {
+    // Ensure all necessary data is provided
+    if (!stockSymbol || !amount || !price) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
 
-  // Here you would add the logic to handle the actual selling of stocks via the API
+    // Create the trade object
+    const trade = {
+      userId: req.user.id, // Retrieved from auth middleware
+      type: 'sell',
+      stockSymbol,
+      amount,
+      price,
+      date: new Date().toISOString(), // Current time in ISO format
+    };
 
-  saveTrade(trade);
+    // Save the trade to the database
+    const savedTrade = await Trade.addTrade(trade);
 
-  res.status(201).json({ msg: 'Sell trade recorded', trade });
+    res.status(201).json({ msg: 'Sell trade recorded successfully', trade: savedTrade });
+  } catch (err) {
+    console.error('Error recording sell trade:', err.message || err);
+    res.status(500).json({ error: 'Failed to record sell trade. Please try again later.' });
+  }
 };
 
-exports.getTrades = (req, res) => {
-  const trades = readTradesFromFile();
-  const userTrades = trades.filter(trade => trade.user === req.user.email);
-  res.json(userTrades);
+// Get Trades
+exports.getTrades = async (req, res) => {
+  try {
+    // Retrieve all trades for the logged-in user
+    const trades = await Trade.getTradesByUserId(req.user.id);
+
+    if (!trades || trades.length === 0) {
+      return res.status(404).json({ msg: 'No trades found for this user.' });
+    }
+
+    res.status(200).json(trades);
+  } catch (err) {
+    console.error('Error fetching trades:', err.message || err);
+    res.status(500).json({ error: 'Failed to fetch trades. Please try again later.' });
+  }
 };

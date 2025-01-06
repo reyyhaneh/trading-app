@@ -1,63 +1,98 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import {Line} from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 
+// Register Chart.js components
+ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend);
 
 const ProfitLossChart = () => {
-    const [chartData, setChartData] = useState({});
-    const [hasTrades, setHasTrades] = useState(true); // Track if the user has trades
-    const [error, setError] = useState(null);
+  const [chartData, setChartData] = useState(null);
+  const [hasTrades, setHasTrades] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  useEffect(() => {
+    const fetchProfitLossData = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem('user'));
 
-    useEffect (() => {
-        const fetchProfitLossData = async () => {
-          try{
-            const user = JSON.parse(localStorage.getItem('user'));
-          
-            const response = await axios.get('http://localhost:5000/api/profile/pl-chart', {
-                headers: {
-                  'x-auth-token':user.token,
-                }
-              });
-            
-            const data = response.data;
-            console.log(data.JSON);
-            
-            if (data.length === 0) {
-              // If no trades exist, update state
-              setHasTrades(false);
-              return;
-            }
+        if (!user || !user.token) {
+          setError('User is not authenticated.');
+          setHasTrades(false);
+          setLoading(false);
+          return;
+        }
 
-            const dates = data.map(item => item.data);
-            const profits = data.map(item => item.profitLoss);
+        const response = await axios.get('http://localhost:5000/api/profile/pl-chart', {
+          headers: {
+            'x-auth-token': user.token,
+          },
+        });
 
-            setChartData({
-                labels: dates,
-                datasets: [
-                  {
-                    label: 'Profit/Loss Over Time',
-                    data: profits,
-                    fill: false,
-                    backgroundColor: 'rgb(75, 192, 192)',
-                    borderColor: 'rgba(75, 192, 192, 0.2)',
-                  },
-                ],
-              });
-            }catch(error){
-                console.error('Error fetching profit/loss data:', error);
+        const data = response.data;
 
-            }
+        if (!data || data.length === 0) {
+          setHasTrades(false);
+          setLoading(false);
+          return;
+        }
+
+        const dates = data.map(item => new Date(item.date).toLocaleString()); // Format date as 'MM/DD/YYYY, HH:MM:SS'
+        const profits = data.map(item => item.profitLoss);
+
+        const chartData = {
+          labels: dates,
+          datasets: [
+            {
+              label: 'Profit/Loss Over Time',
+              data: profits,
+              fill: false,
+              backgroundColor: 'rgb(75, 192, 192)',
+              borderColor: 'rgba(75, 192, 192, 0.6)',
+              tension: 0.4, // Smooth lines
+            },
+          ],
         };
-        fetchProfitLossData();
 
-    }, []);
-    return (
-        <div>
-          
-          <h3>Profit/Loss Over Time</h3>
-          <Line data={chartData} />
-        </div>
-      );
-}
+        console.log("✅ Chart Data:", chartData); // Log chart data for debugging
+        setChartData(chartData);
+      
+      } catch (err) {
+        console.error('Error fetching profit/loss data:', err);
+        setError('Failed to load data.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfitLossData();
+  }, []);
+
+  if (loading) return <p className="text-center text-gray-500">Loading...</p>;
+  if (error) return <p className="text-center text-red-500">{error}</p>;
+  if (!hasTrades) return <p className="text-center text-gray-500">No trades available to display.</p>;
+
+  return (
+    <div className="mt-6">
+      <h3 className="text-lg font-semibold text-gray-800 text-center mb-4">Profit/Loss Over Time</h3>
+      <div style={{ height: '400px', width: '100%' }} className="relative">
+        {chartData ? (
+          <Line data={chartData} options={{ responsive: true, maintainAspectRatio: false }} />
+        ) : (
+          <p className="text-center text-gray-500">No data available.</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default ProfitLossChart;

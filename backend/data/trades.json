@@ -61,5 +61,23 @@
     "price": "99759.00",
     "date": "2024-12-07T12:24:44.041Z",
     "user": "reyhoondavaee@gmail.com"
+  },
+  {
+    "id": "9ff59895-f4d5-4bc0-adb5-35f7dd66f9c2",
+    "type": "buy",
+    "stockSymbol": "BTC",
+    "amount": "1",
+    "price": "93773.00",
+    "date": "2024-12-30T12:05:20.768Z",
+    "user": "reyhaneh@gmail.com"
+  },
+  {
+    "id": "6600804e-3b96-4a57-a7ab-6634060df81e",
+    "type": "sell",
+    "stockSymbol": "BTC",
+    "amount": "0.5",
+    "price": "46886.50",
+    "date": "2024-12-30T12:05:30.039Z",
+    "user": "reyhaneh@gmail.com"
   }
 ]

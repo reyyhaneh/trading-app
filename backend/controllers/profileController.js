@@ -38,11 +38,12 @@ const calculateProfitLossOverTime = (trades, currentPrice) => {
 
 exports.getProfitLoss = async (req, res) => {
   
-  const email = req.user.email;
+  const userId = req.user.id;
+  console.log("user id: ", userId)
   
   try {
     // Fetch user trades
-    const trades = await Trade.getUserTrades(email);
+    const trades = await Trade.getTradesByUserId(userId);
     console.log("trades: ", trades)
     console.log("trades length:", trades.length)
 
@@ -87,31 +88,27 @@ exports.getProfitLoss = async (req, res) => {
 };
 
 
-// Assuming trades is an array of user's trades
-exports.getProfitLossByTrades = async (req,res) => {
-  const email = req.user.email;
+exports.getProfitLossChart = async (req, res) => {
+  try {
+    const userId = req.user.id; // Extract user ID from authenticated request
 
-  try{
-    const trades = await Trade.getUserTrades(email);    
+    // Fetch trades from the database
+    const trades = await Trade.getTradesByUserId(userId);
 
-    if (!trades.length) return res.json({ profitLoss: 0, message: 'No trades found.' });
+    if (!trades.length) {
+      return res.status(200).json([]); // No trades found
+    }
 
-    
-    // Fetch the current Bitcoin price
-    const response = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
-      params: {
-        ids: 'bitcoin',
-        vs_currencies: 'usd'
-      }
-    });
-    const currentPrice = response.data.bitcoin.usd;
+    // Format trades for the chart
+    const chartData = trades.map(trade => ({
+      date: trade.date.toISOString().split('T')[0], // Format date as YYYY-MM-DD
+      profitLoss: parseFloat(trade.profit_loss), // Ensure numeric format
+    }));
 
-    return calculateProfitLossOverTime(trades, currentPrice);
-
-  } catch(error){
-    console.error("error in getProfitLossByTrades", error);
+    return res.status(200).json(chartData);
+  } catch (err) {
+    console.error('Error fetching profit/loss data:', err);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
-
 

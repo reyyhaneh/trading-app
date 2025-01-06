@@ -26,11 +26,11 @@ const TradeForm = () => {
   }, []);
 
   async function buy() {
-    const trade = `{
-      "stockSymbol" : "BTC",
-      "amount" : "${amount}",
-      "price" : "${price}"
-    }`;
+    const trade = {
+      stockSymbol: "BTC",
+      amount: amount,
+      price: price,
+    };
   
     try {
       await tradeService.buyStock(trade);
@@ -39,14 +39,14 @@ const TradeForm = () => {
       console.error('Trade failed', error);
     }
   }
-
+  
   async function sell() {
-    const trade = `{
-      "stockSymbol" : "BTC",
-      "amount" : "${amount}",
-      "price" : "${price}"
-    }`;
-
+    const trade = {
+      stockSymbol: "BTC",
+      amount: amount,
+      price: price,
+    };
+  
     try {
       await tradeService.sellStock(trade);
       alert('Trade executed successfully');
@@ -54,7 +54,7 @@ const TradeForm = () => {
       console.error('Trade failed', error);
     }
   }
-
+  
   const handleAmountChange = (e) => {
     const newAmount = e.target.value;
     setAmount(newAmount);
