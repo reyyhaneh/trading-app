@@ -1,5 +1,10 @@
 const Trade = require('../models/Trade');
+const { updateScore } = require('../models/User');
 
+const calculateScore = (type, amount, price) => {
+  const baseScore = Math.round(amount * price * 0.01); // 1% of trade value as points
+  return type === 'buy' ? baseScore : baseScore * 1.5; // Selling gets 50% extra points
+};
 // Buy Stock
 exports.buyStock = async (req, res) => {
   const { stockSymbol, amount, price } = req.body;
@@ -27,6 +32,10 @@ exports.buyStock = async (req, res) => {
 
     // Save the trade to the database
     const savedTrade = await Trade.addTrade(trade);
+    
+    // Calculate and update user score
+    const scoreChange = calculateScore('buy', amount, price);
+    await updateScore(req.user.id, scoreChange, 'Executed a buy trade');
 
     res.status(201).json({ msg: 'Buy trade recorded successfully', trade: savedTrade });
   } catch (err) {
@@ -57,6 +66,11 @@ exports.sellStock = async (req, res) => {
 
     // Save the trade to the database
     const savedTrade = await Trade.addTrade(trade);
+
+    // Calculate and update user score
+    const scoreChange = calculateScore('sell', amount, price);
+    console.log(scoreChange)
+    await updateScore(req.user.id, scoreChange, 'Executed a sell trade');
 
     res.status(201).json({ msg: 'Sell trade recorded successfully', trade: savedTrade });
   } catch (err) {

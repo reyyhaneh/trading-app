@@ -1,9 +1,28 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import ProfitLoss from '../components/ProfitLoss';
 import ProfitLossChart from '../components/ProfitLossChart';
 
 const Profile = () => {
   const user = JSON.parse(localStorage.getItem('user'));
+  const [score, setScore] = useState(0);
+  useEffect(() => {
+    const fetchScore = async () => {
+      if (!user || !user.token) return;
+
+      try {
+        const response = await axios.get('http://localhost:5000/api/profile/score', {
+          headers: { 'x-auth-token': user.token },
+        });
+
+        setScore(response.data.score || 0);
+        console.log('score: ', score)
+      } catch (error) {
+        console.error('Error fetching user score:', error);
+      }
+    };
+
+    fetchScore();
+  }, [user]);
 
   return (
     <div className="container mx-auto my-8 px-4">
@@ -18,6 +37,15 @@ const Profile = () => {
             <span className="font-medium">Joined On:</span> {user?.joined || 'Unknown'}
           </p>
         </div>
+
+        {/* Score Display */}
+         <div className="mt-6">
+            <p className="text-gray-600 font-medium">Your Score:</p>
+            <span className="text-xl font-bold text-white bg-blue-500 px-4 py-2 rounded-full shadow-md">
+              {score}
+            </span>
+          </div>
+        
 
         {/* Profit & Loss Information */}
         <div className="col-span-2 bg-white shadow rounded-lg p-6">

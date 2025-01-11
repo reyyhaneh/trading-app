@@ -112,3 +112,23 @@ exports.getProfitLossChart = async (req, res) => {
   }
 };
 
+const pool = require('../config/db');
+
+exports.getUserScore = async (req, res) => {
+  try {
+    const { id } = req.user;
+
+    const result = await pool.query('SELECT score FROM users WHERE id = $1', [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    console.log(score)
+
+    res.status(200).json({ score: result.rows[0].score });
+  } catch (error) {
+    console.error('Error fetching user score:', error);
+    res.status(500).json({ error: 'Failed to fetch user score' });
+  }
+};
+
