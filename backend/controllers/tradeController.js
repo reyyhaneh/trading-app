@@ -10,9 +10,6 @@ exports.buyStock = async (req, res) => {
   const { stockSymbol, amount, price } = req.body;
 
   try {
-    console.log("stock symbol: ", stockSymbol)
-    console.log("amount: ", amount)
-    console.log("price: ", price)
     // Ensure all necessary data is provided
     if (!stockSymbol || !amount || !price) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -27,8 +24,6 @@ exports.buyStock = async (req, res) => {
       price,
       date: new Date().toISOString(), // Current time in ISO format
     };
-
-    console.log("trade", trade)
 
     // Save the trade to the database
     const savedTrade = await Trade.addTrade(trade);

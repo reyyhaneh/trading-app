@@ -44,13 +44,13 @@ const ProfitLoss = () => {
   const hasTrades = profitLoss?.averageCost || profitLoss?.currentValue || profitLoss?.profitLoss;
 
   return (
-    <div>
+    <div className="">
       <div className="flex items-center justify-center gap-2 mb-6">
         <h3 className="text-lg font-semibold text-gray-800">
           Profit & Loss
         </h3>
-        <div className="relative group">
-          <span className="w-5 h-5 flex items-center justify-center bg-blue-600 text-white rounded-full text-xs cursor-pointer">
+        <div className="z-10 relative group">
+          <span className="z-10 w-5 h-5 flex items-center justify-center bg-blue-600 text-white rounded-full text-xs cursor-pointer">
             i
           </span>
           <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-64 bg-gray-800 text-white text-xs p-3 rounded-lg shadow-lg">

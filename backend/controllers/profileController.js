@@ -2,6 +2,8 @@
 const Trade = require('../models/Trade');
 const axios = require('axios');
 
+const User = require('../models/User'); // ✅ Import User model
+const pool = require('../config/db'); // ✅ Ensure database connection is imported
 
 /*
 Implement a calculator function 
@@ -112,23 +114,28 @@ exports.getProfitLossChart = async (req, res) => {
   }
 };
 
-const pool = require('../config/db');
 
 exports.getUserScore = async (req, res) => {
   try {
-    const { id } = req.user;
+    console.log("✅ Fetching user score...");
 
+    const { id } = req.user;
+    console.log("✅ User ID:", id);
+
+    // Ensure User model is being used correctly
     const result = await pool.query('SELECT score FROM users WHERE id = $1', [id]);
 
     if (result.rows.length === 0) {
+      console.warn("⚠️ User not found in database with ID:", id);
       return res.status(404).json({ error: 'User not found' });
     }
-    console.log(score)
 
-    res.status(200).json({ score: result.rows[0].score });
+    const userScore = result.rows[0].score;
+    console.log("🏆 User Score:", userScore);
+
+    res.status(200).json({ score: userScore });
   } catch (error) {
-    console.error('Error fetching user score:', error);
+    console.error("❌ Error fetching user score:", error);
     res.status(500).json({ error: 'Failed to fetch user score' });
   }
 };
-

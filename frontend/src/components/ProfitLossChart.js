@@ -65,7 +65,6 @@ const ProfitLossChart = () => {
 
         console.log("✅ Chart Data:", chartData); // Log chart data for debugging
         setChartData(chartData);
-      
       } catch (err) {
         console.error('Error fetching profit/loss data:', err);
         setError('Failed to load data.');
@@ -84,12 +83,28 @@ const ProfitLossChart = () => {
   return (
     <div className="mt-6">
       <h3 className="text-lg font-semibold text-gray-800 text-center mb-4">Profit/Loss Over Time</h3>
-      <div style={{ height: '400px', width: '100%' }} className="relative">
-        {chartData ? (
-          <Line data={chartData} options={{ responsive: true, maintainAspectRatio: false }} />
-        ) : (
-          <p className="text-center text-gray-500">No data available.</p>
-        )}
+
+      {/* Scrollable container for the chart */}
+      <div className="overflow-x-auto">
+        <div
+          className="relative"
+          style={{
+            minWidth: '600px', // Minimum width for the chart
+            height: '400px',
+          }}
+        >
+          {chartData ? (
+            <Line
+              data={chartData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+              }}
+            />
+          ) : (
+            <p className="text-center text-gray-500">No data available.</p>
+          )}
+        </div>
       </div>
     </div>
   );

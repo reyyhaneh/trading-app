@@ -77,15 +77,35 @@ const User = {
       throw error;
     }
   },
+
+    // Fetch user's score by ID
+  async getScore(userId) {
+    try {
+      const result = await pool.query('SELECT score FROM users WHERE id = $1', [userId]);
+
+      if (result.rows.length === 0) {
+        console.warn(`No user found with ID: ${userId}`);
+        return null;
+      }
+
+      return result.rows[0].score; // Return the score
+    } catch (error) {
+      console.error('Error fetching user score:', error);
+      throw error;
+    }
+  },
+
   async updateScore(userId, scoreChange, reason) {
     try {
-      console.log(userId, scoreChange)
+      console.log(`Updating score: User ${userId}, Change: ${scoreChange}`);
 
       // Update the user's total score in the users table
       await pool.query(
         `UPDATE users SET score = score + $1 WHERE id = $2`,
         [scoreChange, userId]
       );
+      console.log(`✅ Score updated successfully for User ${userId}`);
+
     } catch (error) {
       console.error('Error updating user score:', error);
       throw error;
