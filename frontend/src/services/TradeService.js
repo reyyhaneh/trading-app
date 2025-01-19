@@ -17,9 +17,7 @@ const getAuthHeader = () => {
 
 // Using async/await ensures that the request waits for the response before moving on.
 const buyStock = async (trade) => {
-  console.log("1")
   const response = await axios.post(`${API_URL}buy`, trade, { headers: getAuthHeader() })
-  console.log("2")
   return response.data;
 }
 

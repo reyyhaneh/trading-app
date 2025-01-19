@@ -14,7 +14,6 @@ exports.register = async (req, res) => {
     // Check if the user already exists
     const existingUser = await findByEmail(email);
     if (existingUser) {
-      console.log(existingUser); // Log the existing user for debugging
       return res.status(400).json({ msg: 'User already exists' });
     }
 
@@ -102,7 +101,6 @@ exports.login = async (req, res) => {
 
   try {
     const user = await findByEmail(email);
-    console.log('Login user:', user); // Ensure this includes is_email_verified
 
 
     if (!user) {
@@ -147,13 +145,11 @@ exports.login = async (req, res) => {
 
 exports.verifyEmail = async (req, res) => {
   const { verificationCode } = req.body;
-  console.log('Received verificationCode: ', verificationCode);
 
   try {
     // Decode the token
     const decoded = jwt.verify(verificationCode, 'meow'); // Ensure 'meow' is the correct secret
     const email = decoded.email;
-    console.log('Decoded email from token: ', email);
 
     // Find user by email
     const user = await findByEmail(email);
@@ -168,7 +164,6 @@ exports.verifyEmail = async (req, res) => {
 
     // Update the user's email verification status
     const updatedUser = await verifyEmail(email); // Update the user in the database
-    console.log('User email verified successfully');
 
     res.status(200).json({ msg: 'Email verified successfully. Please login.', user: updatedUser });
   } catch (error) {

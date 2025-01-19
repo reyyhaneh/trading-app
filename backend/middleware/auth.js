@@ -10,7 +10,6 @@ module.exports = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'meow');
-    console.log('✅ Decoded token payload:', decoded); // ✅ Debug log
 
     const email = decoded.user?.email; // ✅ Access email correctly
 
@@ -26,7 +25,6 @@ module.exports = async (req, res, next) => {
     }
 
     req.user = { id: user.id, email: user.email }; // ✅ Attach user info
-    console.log('✅ Attached user to req:', req.user);
 
     next();
   } catch (err) {

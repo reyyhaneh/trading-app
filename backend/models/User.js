@@ -97,14 +97,11 @@ const User = {
 
   async updateScore(userId, scoreChange, reason) {
     try {
-      console.log(`Updating score: User ${userId}, Change: ${scoreChange}`);
-
       // Update the user's total score in the users table
       await pool.query(
         `UPDATE users SET score = score + $1 WHERE id = $2`,
         [scoreChange, userId]
       );
-      console.log(`✅ Score updated successfully for User ${userId}`);
 
     } catch (error) {
       console.error('Error updating user score:', error);

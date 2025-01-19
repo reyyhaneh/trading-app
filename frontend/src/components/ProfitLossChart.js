@@ -63,7 +63,6 @@ const ProfitLossChart = () => {
           ],
         };
 
-        console.log("✅ Chart Data:", chartData); // Log chart data for debugging
         setChartData(chartData);
       } catch (err) {
         console.error('Error fetching profit/loss data:', err);

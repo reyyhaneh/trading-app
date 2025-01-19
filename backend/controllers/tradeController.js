@@ -64,7 +64,6 @@ exports.sellStock = async (req, res) => {
 
     // Calculate and update user score
     const scoreChange = calculateScore('sell', amount, price);
-    console.log(scoreChange)
     await updateScore(req.user.id, scoreChange, 'Executed a sell trade');
 
     res.status(201).json({ msg: 'Sell trade recorded successfully', trade: savedTrade });

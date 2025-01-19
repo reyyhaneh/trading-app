@@ -33,7 +33,6 @@ const calculateProfitLossOverTime = (trades, currentPrice) => {
       profitLoss: cumulativeProfitLoss + tradeAmount * currentPrice
     };
   });
-  console.log(profitLossData);
 
   return profitLossData;
 };
@@ -41,13 +40,10 @@ const calculateProfitLossOverTime = (trades, currentPrice) => {
 exports.getProfitLoss = async (req, res) => {
   
   const userId = req.user.id;
-  console.log("user id: ", userId)
   
   try {
     // Fetch user trades
     const trades = await Trade.getTradesByUserId(userId);
-    console.log("trades: ", trades)
-    console.log("trades length:", trades.length)
 
     if (!trades.length) return res.json({ profitLoss: 0, message: 'No trades found.' });
 
@@ -117,10 +113,8 @@ exports.getProfitLossChart = async (req, res) => {
 
 exports.getUserScore = async (req, res) => {
   try {
-    console.log("✅ Fetching user score...");
 
     const { id } = req.user;
-    console.log("✅ User ID:", id);
 
     // Ensure User model is being used correctly
     const result = await pool.query('SELECT score FROM users WHERE id = $1', [id]);
@@ -131,7 +125,6 @@ exports.getUserScore = async (req, res) => {
     }
 
     const userScore = result.rows[0].score;
-    console.log("🏆 User Score:", userScore);
 
     res.status(200).json({ score: userScore });
   } catch (error) {
