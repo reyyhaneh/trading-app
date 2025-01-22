@@ -132,3 +132,22 @@ exports.getUserScore = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch user score' });
   }
 };
+
+
+exports.getBalance = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const balance = await User.getBalance(userId);
+
+    if (balance === null) {
+      return res.status(404).json({ error: 'User not found or no balance available' });
+    }
+
+    console.log(balance)
+    res.status(200).json({ balance: parseFloat(balance) });
+    
+    } catch (err) {
+      console.error('Error fetching balance:', err);
+      res.status(500).json({error: 'Server error'});
+    }
+};

@@ -3,8 +3,7 @@ const axios = require('axios');
 const getBitcoinPrice = async () => {
   try {
     const response = await axios.get('https://openexchangerates.org/api/latest.json?app_id=0789c7f2f9df43bcb371ad15027e0242');
-    const usdPrice = response.data.rates.BTC; // USD to other currencies
-
+    const usdPrice = response.data.rates.BTC; 
     return usdPrice;
   } catch (error) {
     console.error('Error fetching bitcoin price:', error);
@@ -39,4 +38,5 @@ const getBtcHistoricalPrices = async (days = 30) => {
 
 module.exports = {
   getBtcHistoricalPrices,
+  getBitcoinPrice,
 };

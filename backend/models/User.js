@@ -23,6 +23,23 @@ const User = {
     }
   },
 
+  async findById(id) {
+    try {
+      const query = 'SELECT * FROM users WHERE id = $1';
+      const result = await pool.query(query, [id]);
+
+      if (result.rows.length === 0) {
+        console.warn(`No user found with ID: ${id}`);
+        return null;
+      }
+
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error finding user by email:', error.message || error);
+      throw error;
+    }
+  },
+
   /**
    * Creates a new user in the database.
    * @param {Object} user - The user details.
@@ -35,12 +52,14 @@ const User = {
   async create(user) {
     try {
       const { username, email, password, verificationToken } = user;
+      const initialBalance = 10000; // or from config
+
       const query = `
-        INSERT INTO users (username, email, password, verification_token, is_email_verified)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING *;
-      `;
-      const values = [username, email, password, verificationToken, false];
+      INSERT INTO users (username, email, password, verification_token, is_email_verified, balance)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *;
+    `;
+      const values = [username, email, password, verificationToken, false, initialBalance];
 
       const result = await pool.query(query, values);
       return result.rows[0];
@@ -105,6 +124,39 @@ const User = {
 
     } catch (error) {
       console.error('Error updating user score:', error);
+      throw error;
+    }
+  },
+
+
+  async getBalance(userId) {
+    try {
+      const query = 'SELECT balance FROM users WHERE id = $1';
+      const result = await pool.query(query, [userId]);
+
+      if (result.rows.length === 0) {
+        console.warn(`No user found with ID: ${userId}`);
+        return null;
+      }
+
+      return result.rows[0].balance;
+    } catch (error) {
+      console.error('Error fetching user balance:', error.message || error);
+      throw error;
+    }
+  },
+  async updateBalance(userId, newBalance) {
+    try {
+      const query = `
+        UPDATE users
+        SET balance = $2
+        WHERE id = $1
+        RETURNING *;
+      `;
+      const result = await pool.query(query, [userId, newBalance]);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error updating user balance:', error);
       throw error;
     }
   },
