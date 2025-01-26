@@ -3,7 +3,7 @@ import SearchBar from './SearchBar';
 
 const Watchlist = ({ selectedSymbol, onSelect }) => {
   const [symbols, setSymbols] = useState([]); // Symbols added to the watchlist
-  const predefinedSymbols = ['BTCUSD']; // Predefined symbols
+  const predefinedSymbols = ['BTCUSD', 'ETHUSD']; // Predefined symbols
 
   const handleAddSymbol = (symbol) => {
     if (!symbols.includes(symbol)) {
