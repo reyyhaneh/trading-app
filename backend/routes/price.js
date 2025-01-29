@@ -1,16 +1,9 @@
-// backend/routes/price.js
-
 const express = require('express');
 const router = express.Router();
 const priceService = require('../services/priceService');
 const auth = require('../middleware/auth'); // Middleware to authenticate requests
 
-/**
- * @route   GET /api/price/current
- * @desc    Get current prices for specified symbols
- * @access  Private
- * @query   symbols - comma-separated list of symbols, e.g., 'BTCUSDT,ETHUSDT,DOGEUSDT'
- */
+// Multiple symbols
 router.get('/current', auth, async (req, res) => {
   const symbolsQuery = req.query.symbols;
   if (!symbolsQuery) {
@@ -28,11 +21,7 @@ router.get('/current', auth, async (req, res) => {
   }
 });
 
-/**
- * @route   GET /api/price/current/:symbol
- * @desc    Get current price for a single symbol
- * @access  Private
- */
+// Single symbol
 router.get('/current/:symbol', auth, async (req, res) => {
   const symbol = req.params.symbol.toUpperCase();
 

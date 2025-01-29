@@ -1,12 +1,9 @@
-// backend/services/binancePriceService.js
-
 const axios = require('axios');
 const symbolMapping = require('../config/symbolMapping'); // Import the symbol mapping
 
-// Binance API base URL
 const BINANCE_API_BASE_URL = 'https://api.binance.com/api/v3';
 
-// Define per-symbol cache
+// per-symbol cache
 let cachedPrices = {}; // { BINANCE_SYMBOL: { price: number, lastFetched: timestamp } }
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 

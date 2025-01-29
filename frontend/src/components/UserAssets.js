@@ -1,8 +1,7 @@
-// frontend/src/components/UserAssets.js
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import priceService from '../services/priceService';  // Updated to use backend's price service
+import priceService from '../services/priceService';
+
 
 const UserAssets = () => {
   // Default test data (optional fallback)
@@ -26,43 +25,41 @@ const UserAssets = () => {
           setLoading(false);
           return;
         }
-
+  
         const { token } = user;
-
+  
+        // Fetch user's balance first
+        const balanceResponse = await axios.get('http://localhost:5000/api/profile/balance', {
+          headers: { 'x-auth-token': token },
+        });
+        setBalance(balanceResponse.data.balance);
+  
         // Fetch user's assets from backend
         const assetsResponse = await axios.get('http://localhost:5000/api/profile/assets', {
           headers: { 'x-auth-token': token },
         });
         const fetchedAssets = assetsResponse.data.assets || [];
-
+  
         // Extract unique asset symbols
         const symbols = [...new Set(fetchedAssets.map(asset => asset.asset_symbol.toUpperCase()))];
-
+  
         if (symbols.length === 0) {
           setAssets(defaultAssets);
-          setBalance(balanceResponse?.data?.balance || 0);
           setLoading(false);
           return;
         }
-
-
+  
         // Fetch current prices for all symbols from backend
         const prices = await priceService.getCurrentPrices(symbols, token); // { BTCUSDT: 21653.24, ETHUSDT: 1586.32, ... }
-        console.log("prices: ", prices)
+        console.log("prices: ", prices);
+  
         // Update assets with current prices
         const updatedAssets = fetchedAssets.map(asset => ({
           ...asset,
           currentPrice: prices[asset.asset_symbol.toUpperCase()] || 0,
         }));
-
+  
         setAssets(updatedAssets.length ? updatedAssets : defaultAssets);
-
-        // Fetch user's balance
-        const balanceResponse = await axios.get('http://localhost:5000/api/profile/balance', {
-          headers: { 'x-auth-token': token },
-        });
-        setBalance(balanceResponse.data.balance);
-
         setLoading(false);
       } catch (error) {
         console.error('Error fetching user assets or prices:', error.response?.data?.error || error.message);
@@ -70,7 +67,7 @@ const UserAssets = () => {
         setLoading(false);
       }
     };
-
+  
     fetchAssetsAndPrices();
   }, []); // Run once on mount
 
