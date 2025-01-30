@@ -143,7 +143,6 @@ exports.getBalance = async (req, res) => {
       return res.status(404).json({ error: 'User not found or no balance available' });
     }
 
-    console.log(balance)
     res.status(200).json({ balance: parseFloat(balance) });
     
     } catch (err) {

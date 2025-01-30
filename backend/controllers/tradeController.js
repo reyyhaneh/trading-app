@@ -46,8 +46,6 @@ exports.buyStock = async (req, res) => {
     };
 
     const savedTrade = await Trade.addTrade(trade);
-    console.log(stockSymbol)
-    console.log(amount)
 
     await UserAssets.addOrUpdateAsset(req.user.id, stockSymbol, amount);
 

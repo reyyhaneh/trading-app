@@ -51,7 +51,6 @@ const UserAssets = () => {
   
         // Fetch current prices for all symbols from backend
         const prices = await priceService.getCurrentPrices(symbols, token); // { BTCUSDT: 21653.24, ETHUSDT: 1586.32, ... }
-        console.log("prices: ", prices);
   
         // Update assets with current prices
         const updatedAssets = fetchedAssets.map(asset => ({

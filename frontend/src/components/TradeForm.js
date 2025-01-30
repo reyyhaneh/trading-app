@@ -1,40 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import tradeService from '../services/TradeService';
-import axios from 'axios';
+import priceService from '../services/priceService';  // Import backend price service
 
 const TradeForm = () => {
-  const [symbol, setSymbol] = useState('BTCUSDT');
+  const [symbol, setSymbol] = useState('BTCUSDT'); // Default symbol
   const [amount, setAmount] = useState('');
   const [price, setPrice] = useState('');
   const [currentPrice, setCurrentPrice] = useState('');
-  const [symbolsList, setSymbolsList] = useState(['BTCUSDT', 'ETHUSDT', 'DOGEUSDT']);
+  const [symbolsList, setSymbolsList] = useState(['BTCUSDT', 'ETHUSDT', 'DOGEUSDT']); // Available symbols
   const [loadingPrice, setLoadingPrice] = useState(false);
   const [priceError, setPriceError] = useState(null);
 
+  // Fetch the current price from backend
   useEffect(() => {
     const fetchPrice = async () => {
       setLoadingPrice(true);
       setPriceError(null);
       try {
-        const symbolMapping = {
-          BTCUSDT: 'bitcoin',
-          ETHUSDT: 'ethereum',
-          DOGEUSDT: 'dogecoin',
-        };
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || !user.token) {
+          setPriceError('User not authenticated.');
+          setLoadingPrice(false);
+          return;
+        }
+        const { token } = user;
 
-        const coinId = symbolMapping[symbol];
-        if (!coinId) throw new Error('Invalid symbol selected.');
-
-        const response = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
-          params: {
-            ids: coinId,
-            vs_currencies: 'usd',
-          },
-        });
-
-        const fetchedPrice = response.data[coinId].usd;
-        setCurrentPrice(fetchedPrice);
-        setPrice((amount * fetchedPrice).toFixed(2));
+        const price = await priceService.getCurrentPrice(symbol, token);
+        setCurrentPrice(price);
+        setPrice((amount * price).toFixed(2)); // Update price based on amount
       } catch (error) {
         console.error('Error fetching price:', error);
         setPriceError('Failed to fetch the current price. Please try again.');
@@ -45,15 +38,63 @@ const TradeForm = () => {
       }
     };
 
-    if (symbol) fetchPrice();
-  }, [symbol, amount]);
+    if (symbol) {
+      fetchPrice();
+    }
+  }, [symbol, amount]); // Trigger the effect when symbol or amount changes
 
+  // Handle buying
+  const buy = async () => {
+    if (!amount || !price) {
+      alert('Please enter a valid amount and price.');
+      return;
+    }
+
+    const trade = {
+      stockSymbol: symbol,
+      amount: parseFloat(amount),
+      price: parseFloat(price),
+    };
+
+    try {
+      await tradeService.buyStock(trade);
+      alert('Trade executed successfully');
+    } catch (error) {
+      console.error('Trade failed', error);
+      alert('Trade failed. Please try again.');
+    }
+  };
+
+  // Handle selling
+  const sell = async () => {
+    if (!amount || !price) {
+      alert('Please enter a valid amount and price.');
+      return;
+    }
+
+    const trade = {
+      stockSymbol: symbol,
+      amount: parseFloat(amount),
+      price: parseFloat(price),
+    };
+
+    try {
+      await tradeService.sellStock(trade);
+      alert('Trade executed successfully');
+    } catch (error) {
+      console.error('Trade failed', error);
+      alert('Trade failed. Please try again.');
+    }
+  };
+
+  // Handle symbol change
   const handleSymbolChange = (e) => {
     setSymbol(e.target.value);
     setAmount('');
     setPrice('');
   };
 
+  // Handle amount change
   const handleAmountChange = (e) => {
     const newAmount = e.target.value;
     setAmount(newAmount);
@@ -63,6 +104,7 @@ const TradeForm = () => {
     }
   };
 
+  // Handle price change
   const handlePriceChange = (e) => {
     const newPrice = e.target.value;
     setPrice(newPrice);
@@ -72,57 +114,20 @@ const TradeForm = () => {
     }
   };
 
-  const buy = async () => {
-    if (!amount || !price) {
-      alert('Please enter valid amount and price.');
-      return;
-    }
-
-    try {
-      await tradeService.buyStock({
-        stockSymbol: symbol,
-        amount: parseFloat(amount),
-        price: parseFloat(price),
-      });
-      alert('Trade executed successfully');
-    } catch (error) {
-      console.error('Trade failed', error);
-      alert('Trade failed. Please try again.');
-    }
-  };
-
-  const sell = async () => {
-    if (!amount || !price) {
-      alert('Please enter valid amount and price.');
-      return;
-    }
-
-    try {
-      await tradeService.sellStock({
-        stockSymbol: symbol,
-        amount: parseFloat(amount),
-        price: parseFloat(price),
-      });
-      alert('Trade executed successfully');
-    } catch (error) {
-      console.error('Trade failed', error);
-      alert('Trade failed. Please try again.');
-    }
-  };
-
   return (
-    <div className="max-w-lg mx-auto p-8 bg-white rounded-lg shadow-md space-y-6">
-      <h1 className="text-2xl font-bold text-center text-gray-800">Trade Form</h1>
+    <div className="bg-white p-6 rounded-lg shadow-md">
       <form className="space-y-4">
+        {/* Symbol Selection */}
         <div>
           <label htmlFor="symbol" className="block text-sm font-medium text-gray-700">
             Select Symbol
           </label>
           <select
             id="symbol"
+            name="symbol"
             value={symbol}
             onChange={handleSymbolChange}
-            className="w-full mt-2 p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+            className="mt-1 block w-full h-12 text-lg border border-gray-300 rounded-md shadow-sm focus:ring-black focus:border-black sm:text-lg"
           >
             {symbolsList.map((sym) => (
               <option key={sym} value={sym}>
@@ -132,21 +137,23 @@ const TradeForm = () => {
           </select>
         </div>
 
+        {/* Price Display */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Current Price (USD)
           </label>
           {loadingPrice ? (
-            <p className="mt-2 text-gray-500">Loading price...</p>
+            <p className="text-gray-500">Loading price...</p>
           ) : priceError ? (
-            <p className="mt-2 text-red-500">{priceError}</p>
+            <p className="text-red-500">{priceError}</p>
           ) : (
-            <p className="mt-2 bg-gray-100 p-2 rounded-md text-lg font-semibold text-gray-800">
+            <p className="mt-1 block w-full h-12 text-lg border border-gray-300 rounded-md shadow-sm bg-gray-100 sm:text-lg">
               ${currentPrice.toLocaleString()}
             </p>
           )}
         </div>
 
+        {/* Amount Input */}
         <div>
           <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
             Amount
@@ -154,51 +161,45 @@ const TradeForm = () => {
           <input
             type="number"
             id="amount"
+            name="amount"
             value={amount}
             onChange={handleAmountChange}
-            disabled={!currentPrice}
-            className="w-full mt-2 p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Enter amount"
+            className="mt-1 block w-full h-12 text-lg border border-gray-300 rounded-md shadow-sm focus:ring-black focus:border-black sm:text-lg"
+            min="0.01"
+            step="0.01"
           />
         </div>
 
+        {/* Price Input */}
         <div>
           <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-            Total Price (USD)
+            Price
           </label>
           <input
             type="number"
             id="price"
+            name="price"
             value={price}
             onChange={handlePriceChange}
-            disabled={!currentPrice}
-            className="w-full mt-2 p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Enter total price"
+            className="mt-1 block w-full h-12 text-lg border border-gray-300 rounded-md shadow-sm focus:ring-black focus:border-black sm:text-lg"
+            min="0.01"
+            step="0.01"
           />
         </div>
 
-        <div className="flex gap-4">
+        {/* Action Buttons */}
+        <div className="flex justify-between">
           <button
             type="button"
             onClick={buy}
-            className={`w-full p-3 text-white font-medium rounded-md ${
-              amount && price
-                ? 'bg-green-600 hover:bg-green-700'
-                : 'bg-green-300 cursor-not-allowed'
-            }`}
-            disabled={!amount || !price}
+            className="inline-flex justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
           >
             Buy
           </button>
           <button
             type="button"
             onClick={sell}
-            className={`w-full p-3 text-white font-medium rounded-md ${
-              amount && price
-                ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-red-300 cursor-not-allowed'
-            }`}
-            disabled={!amount || !price}
+            className="inline-flex justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
           >
             Sell
           </button>

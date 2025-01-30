@@ -29,7 +29,6 @@ const UserAssets = {
     const result = await pool.query(selectQuery, [userId, assetSymbol]);
 
     if (result.rows.length > 0) {
-        console.log("if")
       // Update existing record
       const newAmount = parseFloat(result.rows[0].amount) + amountToAdd;
       const updateQuery = `
@@ -39,7 +38,6 @@ const UserAssets = {
       `;
       await pool.query(updateQuery, [newAmount, result.rows[0].id]);
     } else {
-        console.log("else")
       // Insert new record
       const insertQuery = `
         INSERT INTO user_assets (user_id, asset_symbol, amount)
