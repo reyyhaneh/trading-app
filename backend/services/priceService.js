@@ -13,17 +13,21 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
  * @returns {Promise<number>} - The current price in USD
  */
 const getCurrentPrice = async (symbol) => {
+  // Convert symbol to uppercase and check if it's already in Binance format (e.g., BTCUSDT)
   let binanceSymbol = symbol.toUpperCase();
 
-  // If symbol is not a valid Binance symbol, map it to a Binance symbol
-  if (!binanceSymbol.includes(symbol)) {
-    // If it's a valid internal symbol like 'BTC', convert it to a valid Binance symbol like 'BTCUSDT'
-    binanceSymbol = symbolMapping[symbol.toUpperCase()]; // Example: "BTC" becomes "BTCUSDT"
+  // If the symbol is not in the correct Binance format (doesn't contain 'USDT'), convert it
+  if (!binanceSymbol.includes('USDT')) {
+    // Check if symbol exists in the mapping
+    binanceSymbol = symbolMapping[binanceSymbol];
+    if (!binanceSymbol) {
+      console.log(`Symbol not found in mapping for internal symbol: ${symbol}`);
+      throw new Error(`Symbol ${symbol} not mapped to Binance symbol.`);
+    }
     console.log(`Symbol not in Binance format. Converted to: ${binanceSymbol}`);
   } else {
     console.log(`Symbol is already in Binance format: ${binanceSymbol}`);
   }
-
 
   const now = Date.now();
 

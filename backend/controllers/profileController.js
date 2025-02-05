@@ -1,9 +1,11 @@
-// profileController.js
+const priceService = require('../services/priceService')
 const Trade = require('../models/Trade');
 const axios = require('axios');
 
 const User = require('../models/User'); // ✅ Import User model
 const pool = require('../config/db'); // ✅ Ensure database connection is imported
+
+
 
 /*
 Implement a calculator function 
@@ -36,51 +38,82 @@ const calculateProfitLossOverTime = (trades, currentPrice) => {
 
   return profitLossData;
 };
-
 exports.getProfitLoss = async (req, res) => {
-  
   const userId = req.user.id;
-  
+
   try {
     // Fetch user trades
     const trades = await Trade.getTradesByUserId(userId);
+    console.log(trades);
 
     if (!trades.length) return res.json({ profitLoss: 0, message: 'No trades found.' });
 
-    // Fetch the current Bitcoin price
-    const response = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
-      params: {
-        ids: 'bitcoin',
-        vs_currencies: 'usd'
-      }
-    });
-    const currentPrice = response.data.bitcoin.usd;
+    let assetData = {}; // To hold profit/loss data for each asset symbol
 
-    let totalAmount = 0;
-    let totalCost = 0;
-    
-    trades.forEach((trade) => {
-      const tradeAmount = Number(trade.amount);
-      const tradePrice = Number(trade.price);
-    
-      if (trade.type === 'buy') {
-        totalAmount += tradeAmount;
-        totalCost += tradeAmount * tradePrice;
-      } else if (trade.type === 'sell') {
-        totalAmount -= tradeAmount;
-        totalCost -= tradeAmount * tradePrice;
+    // Process each trade to calculate profit/loss per asset
+    for (let trade of trades) {
+      // Log the trade object for debugging
+      console.log('Processing trade:', trade);
+
+      const { amount, price, type, stock_symbol } = trade;  // Access stock_symbol correctly
+
+      if (!stock_symbol) {
+        console.warn(`Trade with missing stock_symbol: ${JSON.stringify(trade)}`);
+        continue;  // Skip this trade if stock_symbol is undefined or null
       }
-    });
-    
-    const averageCost = totalAmount > 0 ? totalCost / totalAmount : 0;
-    const currentValue = totalAmount > 0 ? totalAmount * currentPrice : 0;
-    const profitLoss = totalAmount > 0 ? currentValue - totalCost : 0;
-    
-  
-    res.json({ profitLoss, averageCost, currentValue });
-    
+
+      // Convert stock_symbol (like 'BTC') to Binance format (like 'BTCUSDT') if necessary
+      let binanceSymbol = stock_symbol.toUpperCase();
+      if (!binanceSymbol.includes('USDT')) {
+        binanceSymbol = `${binanceSymbol}USDT`; // Example: "BTC" becomes "BTCUSDT"
+        console.log(`Symbol not in Binance format. Converted to: ${binanceSymbol}`);
+      } else {
+        console.log(`Symbol is already in Binance format: ${binanceSymbol}`);
+      }
+
+      // Initialize the asset data if not already initialized
+      if (!assetData[binanceSymbol]) {
+        assetData[binanceSymbol] = { totalAmount: 0, totalCost: 0, currentPrice: 0, profitLoss: 0 };
+      }
+
+      const tradeAmount = parseFloat(amount);
+      const tradePrice = parseFloat(price);
+
+      // Update total amount and total cost based on trade type
+      if (type === 'buy') {
+        assetData[binanceSymbol].totalAmount += tradeAmount;
+        assetData[binanceSymbol].totalCost += tradeAmount * tradePrice;
+      } else if (type === 'sell') {
+        assetData[binanceSymbol].totalAmount -= tradeAmount;
+        assetData[binanceSymbol].totalCost -= tradeAmount * tradePrice;
+      }
+    }
+
+    // Now calculate profit/loss for each asset
+    const profitLossResults = [];
+    for (let assetSymbol in assetData) {
+      const { totalAmount, totalCost } = assetData[assetSymbol];
+
+      // Fetch current price for the asset (pass the correct Binance symbol)
+      const currentPrice = await priceService.getCurrentPrice(assetSymbol, req.user.token);
+
+      // Calculate the profit or loss for this asset
+      const currentValue = totalAmount * currentPrice;
+      const profitLoss = currentValue - totalCost;
+
+      profitLossResults.push({
+        assetSymbol,
+        profitLoss: profitLoss.toFixed(2),
+        totalAmount: totalAmount.toFixed(2),
+        totalCost: totalCost.toFixed(2),
+        currentPrice: currentPrice.toFixed(2),
+      });
+    }
+
+    res.json({ profitLossResults });
+
   } catch (err) {
-    console.error('error getting profit loss:', err);
+    console.error('Error getting profit loss:', err);
     res.status(500).send('Server error');
   }
 };
