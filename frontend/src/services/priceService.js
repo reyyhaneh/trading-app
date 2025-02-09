@@ -2,12 +2,14 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api/price';
 
-
-const getCurrentPrice = async (symbol, token) => {
+/**
+ * Get the current price of a single asset from the backend.
+ * @param {string} symbol - The asset symbol (e.g., 'BTC')
+ * @returns {Promise<number>} - The current price in USD
+ */
+const getCurrentPrice = async (symbol) => {
   try {
-    const response = await axios.get(`${API_URL}/current/${symbol}`, {
-      headers: { 'x-auth-token': token },
-    });
+    const response = await axios.get(`${API_URL}/current/${symbol}`);
     return response.data.price;
   } catch (error) {
     console.error(`Error fetching price for ${symbol}:`, error.response?.data?.error || error.message);
@@ -15,11 +17,15 @@ const getCurrentPrice = async (symbol, token) => {
   }
 };
 
-const getCurrentPrices = async (symbols, token) => {
+/**
+ * Get current prices for multiple assets from the backend.
+ * @param {Array<string>} symbols - An array of asset symbols (e.g., ['BTC', 'ETH', 'DOGE'])
+ * @returns {Promise<Object>} - A dictionary of prices { BTC: 42675.00, ETH: 3245.50, DOGE: 0.084 }
+ */
+const getCurrentPrices = async (symbols) => {
   try {
     const symbolsParam = symbols.join(',');
     const response = await axios.get(`${API_URL}/current`, {
-      headers: { 'x-auth-token': token },
       params: { symbols: symbolsParam },
     });
     return response.data.prices;

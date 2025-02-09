@@ -38,13 +38,14 @@ const calculateProfitLossOverTime = (trades, currentPrice) => {
 
   return profitLossData;
 };
+
 exports.getProfitLoss = async (req, res) => {
   const userId = req.user.id;
 
   try {
     // Fetch user trades
     const trades = await Trade.getTradesByUserId(userId);
-    console.log(trades);
+    console.log("User Trades:", trades);
 
     if (!trades.length) return res.json({ profitLoss: 0, message: 'No trades found.' });
 
@@ -52,28 +53,18 @@ exports.getProfitLoss = async (req, res) => {
 
     // Process each trade to calculate profit/loss per asset
     for (let trade of trades) {
-      // Log the trade object for debugging
       console.log('Processing trade:', trade);
 
-      const { amount, price, type, stock_symbol } = trade;  // Access stock_symbol correctly
+      const { amount, price, type, stock_symbol } = trade;  // Directly use stock_symbol
 
       if (!stock_symbol) {
         console.warn(`Trade with missing stock_symbol: ${JSON.stringify(trade)}`);
         continue;  // Skip this trade if stock_symbol is undefined or null
       }
 
-      // Convert stock_symbol (like 'BTC') to Binance format (like 'BTCUSDT') if necessary
-      let binanceSymbol = stock_symbol.toUpperCase();
-      if (!binanceSymbol.includes('USDT')) {
-        binanceSymbol = `${binanceSymbol}USDT`; // Example: "BTC" becomes "BTCUSDT"
-        console.log(`Symbol not in Binance format. Converted to: ${binanceSymbol}`);
-      } else {
-        console.log(`Symbol is already in Binance format: ${binanceSymbol}`);
-      }
-
-      // Initialize the asset data if not already initialized
-      if (!assetData[binanceSymbol]) {
-        assetData[binanceSymbol] = { totalAmount: 0, totalCost: 0, currentPrice: 0, profitLoss: 0 };
+      // Initialize asset data if not already set
+      if (!assetData[stock_symbol]) {
+        assetData[stock_symbol] = { totalAmount: 0, totalCost: 0, currentPrice: 0, profitLoss: 0 };
       }
 
       const tradeAmount = parseFloat(amount);
@@ -81,11 +72,11 @@ exports.getProfitLoss = async (req, res) => {
 
       // Update total amount and total cost based on trade type
       if (type === 'buy') {
-        assetData[binanceSymbol].totalAmount += tradeAmount;
-        assetData[binanceSymbol].totalCost += tradeAmount * tradePrice;
+        assetData[stock_symbol].totalAmount += tradeAmount;
+        assetData[stock_symbol].totalCost += tradeAmount * tradePrice;
       } else if (type === 'sell') {
-        assetData[binanceSymbol].totalAmount -= tradeAmount;
-        assetData[binanceSymbol].totalCost -= tradeAmount * tradePrice;
+        assetData[stock_symbol].totalAmount -= tradeAmount;
+        assetData[stock_symbol].totalCost -= tradeAmount * tradePrice;
       }
     }
 
@@ -94,8 +85,9 @@ exports.getProfitLoss = async (req, res) => {
     for (let assetSymbol in assetData) {
       const { totalAmount, totalCost } = assetData[assetSymbol];
 
-      // Fetch current price for the asset (pass the correct Binance symbol)
-      const currentPrice = await priceService.getCurrentPrice(assetSymbol, req.user.token);
+      // Fetch current price for the asset (using original stock_symbol)
+      const currentPrice = await priceService.getCurrentPrice(assetSymbol);
+      console.log("current price:",currentPrice)
 
       // Calculate the profit or loss for this asset
       const currentValue = totalAmount * currentPrice;
@@ -108,6 +100,7 @@ exports.getProfitLoss = async (req, res) => {
         totalCost: totalCost.toFixed(2),
         currentPrice: currentPrice.toFixed(2),
       });
+      console.log("profit loss:", profitLossResults)
     }
 
     res.json({ profitLossResults });

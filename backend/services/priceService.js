@@ -1,140 +1,69 @@
 const axios = require('axios');
-const symbolMapping = require('../config/symbolMapping'); // Import the symbol mapping
 
-const BINANCE_API_BASE_URL = 'https://api.binance.com/api/v3';
+const COINGECKO_API_BASE_URL = 'https://api.coingecko.com/api/v3';
+const coingeckoSymbolMapping = {
+  BTC: 'bitcoin',
+  ETH: 'ethereum',
+  DOGE: 'dogecoin',
+  ADA: 'cardano',
+  XRP: 'ripple',
+  LTC: 'litecoin',
+  BNB: 'binancecoin',
+  DOT: 'polkadot',
+  SOL: 'solana',
+  MATIC: 'matic-network',
+};
 
-// per-symbol cache
-let cachedPrices = {}; // { BINANCE_SYMBOL: { price: number, lastFetched: timestamp } }
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
-
-/**
- * Fetch current price for a given symbol from Binance.
- * @param {string} symbol - The internal trading pair symbol, e.g., 'BTC'
- * @returns {Promise<number>} - The current price in USD
- */
 const getCurrentPrice = async (symbol) => {
-  // Convert symbol to uppercase and check if it's already in Binance format (e.g., BTCUSDT)
-  let binanceSymbol = symbol.toUpperCase();
-
-  // If the symbol is not in the correct Binance format (doesn't contain 'USDT'), convert it
-  if (!binanceSymbol.includes('USDT')) {
-    // Check if symbol exists in the mapping
-    binanceSymbol = symbolMapping[binanceSymbol];
-    if (!binanceSymbol) {
-      console.log(`Symbol not found in mapping for internal symbol: ${symbol}`);
-      throw new Error(`Symbol ${symbol} not mapped to Binance symbol.`);
-    }
-    console.log(`Symbol not in Binance format. Converted to: ${binanceSymbol}`);
-  } else {
-    console.log(`Symbol is already in Binance format: ${binanceSymbol}`);
-  }
-
-  const now = Date.now();
-
-  // Check if price is cached and still valid
-  if (
-    cachedPrices[binanceSymbol] &&
-    (now - cachedPrices[binanceSymbol].lastFetched) < CACHE_DURATION
-  ) {
-    return cachedPrices[binanceSymbol].price;
-  }
-
+  console.log("symbol:" , symbol)
   try {
-    const response = await axios.get(`${BINANCE_API_BASE_URL}/ticker/price`, {
-      params: { symbol: binanceSymbol },
+    // Convert symbol to Coingecko's expected format (lowercase)
+    const coingeckoId = coingeckoSymbolMapping[symbol.toUpperCase()];
+    
+    console.log("coingecko Id: ", coingeckoId)
+
+    const response = await axios.get(`${COINGECKO_API_BASE_URL}/simple/price`, {
+      params: {
+        ids: coingeckoId,
+        vs_currencies: 'usd',
+      },
     });
 
-    const { price } = response.data;
-
-    if (!price) {
-      throw new Error(`Price not found for symbol: ${binanceSymbol}`);
+    if (!response.data[coingeckoId]) {
+      throw new Error(`Price not found for symbol: ${symbol}`);
     }
 
-    const numericPrice = parseFloat(price);
-
-    if (isNaN(numericPrice)) {
-      throw new Error(`Invalid price format received for symbol: ${binanceSymbol}`);
-    }
-
-    // Update cache for the specific symbol
-    cachedPrices[binanceSymbol] = {
-      price: numericPrice,
-      lastFetched: now,
-    };
-
-    return numericPrice;
+    return response.data[coingeckoId].usd;
   } catch (error) {
-    console.error(`Error fetching price for ${binanceSymbol}:`, error.message || error);
+    console.error(`Error fetching price for ${symbol}:`, error.message);
     throw new Error(`Failed to fetch price for ${symbol}`);
   }
 };
 
-/**
- * Fetch current prices for multiple symbols from Binance.
- * @param {Array<string>} symbols - Array of internal trading pair symbols, e.g., ['BTC', 'ETH']
- * @returns {Promise<Object>} - An object mapping internal symbols to their current prices
- */
 const getCurrentPrices = async (symbols) => {
-  // Map internal symbols to Binance symbols
-  const binanceSymbols = symbols.map(sym => symbolMapping[sym.toUpperCase()]).filter(sym => sym);
-  
-  if (binanceSymbols.length === 0) {
-    throw new Error('No valid symbols provided for price fetching.');
+  try {
+    const coingeckoIds = symbols.map(sym => sym.toLowerCase()).join(','); // Convert to lowercase
+
+    const response = await axios.get(`${COINGECKO_API_BASE_URL}/simple/price`, {
+      params: {
+        ids: coingeckoIds,
+        vs_currencies: 'usd',
+      },
+    });
+
+    const prices = {};
+    symbols.forEach(symbol => {
+      const coingeckoId = symbol.toLowerCase();
+      if (response.data[coingeckoId]) {
+        prices[symbol] = response.data[coingeckoId].usd;
+      }
+    });
+
+    return prices;
+  } catch (error) {
+    console.error('Error fetching multiple prices from Coingecko:', error.message);
+    throw new Error('Failed to fetch multiple prices from Coingecko');
   }
-
-  const now = Date.now();
-  
-  // Determine which symbols need to be fetched
-  const symbolsToFetch = binanceSymbols.filter(symbol => {
-    return !(
-      cachedPrices[symbol] &&
-      (now - cachedPrices[symbol].lastFetched) < CACHE_DURATION
-    );
-  });
-
-  let fetchedPrices = {};
-
-  if (symbolsToFetch.length > 0) {
-    try {
-      const response = await axios.get(`${BINANCE_API_BASE_URL}/ticker/price`, {
-        params: { symbols: JSON.stringify(symbolsToFetch) }, // Binance expects symbols as a JSON array string
-      });
-
-      const fetchedData = response.data; // Array of { symbol, price }
-
-      fetchedData.forEach(item => {
-        const { symbol, price } = item;
-        const numericPrice = parseFloat(price);
-        if (!isNaN(numericPrice)) {
-          // Find internal symbol from Binance symbol
-          const internalSymbol = Object.keys(symbolMapping).find(
-            key => symbolMapping[key] === symbol
-          );
-          if (internalSymbol) {
-            fetchedPrices[internalSymbol] = numericPrice;
-            // Update cache for the specific symbol
-            cachedPrices[symbol] = {
-              price: numericPrice,
-              lastFetched: now,
-            };
-          }
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching multiple prices from Binance:', error.message || error);
-      throw new Error('Failed to fetch multiple prices from Binance');
-    }
-  }
-
-  // For symbols that were not fetched (already cached), retrieve from cache
-  symbols.forEach(sym => {
-    const binanceSym = symbolMapping[sym.toUpperCase()];
-    if (cachedPrices[binanceSym] && fetchedPrices[sym.toUpperCase()] === undefined) {
-      fetchedPrices[sym.toUpperCase()] = cachedPrices[binanceSym].price;
-    }
-  });
-
-  return fetchedPrices;
 };
 
 module.exports = {
