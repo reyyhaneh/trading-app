@@ -73,10 +73,6 @@ const Profile = () => {
         <UserAssets />
       </div>
 
-      {/* Bottom Section: Profit/Loss Chart */}
-      <div className="mt-10 bg-white shadow-md rounded-lg p-6">
-        <ProfitLossChart />
-      </div>
     </div>
   );
 };

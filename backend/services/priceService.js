@@ -13,7 +13,13 @@ const coingeckoSymbolMapping = {
   SOL: 'solana',
   MATIC: 'matic-network',
 };
-
+const COINGECKO_IDS = {
+  BTC: "bitcoin",
+  ETH: "ethereum",
+  DOGE: "dogecoin",
+  ADA: "cardano",
+  // Add more mappings as needed
+};
 const getCurrentPrice = async (symbol) => {
   console.log("symbol:" , symbol)
   try {
@@ -39,11 +45,21 @@ const getCurrentPrice = async (symbol) => {
     throw new Error(`Failed to fetch price for ${symbol}`);
   }
 };
-
 const getCurrentPrices = async (symbols) => {
   try {
-    const coingeckoIds = symbols.map(sym => sym.toLowerCase()).join(','); // Convert to lowercase
+    // Map symbols to Coingecko IDs
+    const coingeckoIds = symbols
+      .map(sym => COINGECKO_IDS[sym.toUpperCase()])
+      .filter(id => id !== undefined) // Remove unmapped symbols
+      .join(',');
 
+    if (!coingeckoIds) {
+      throw new Error("No valid symbols mapped to Coingecko IDs.");
+    }
+
+    console.log("Fetching prices for:", coingeckoIds);
+
+    // Fetch prices from Coingecko
     const response = await axios.get(`${COINGECKO_API_BASE_URL}/simple/price`, {
       params: {
         ids: coingeckoIds,
@@ -51,14 +67,18 @@ const getCurrentPrices = async (symbols) => {
       },
     });
 
+    console.log("Coingecko response:", response.data);
+
+    // Map back to original symbols
     const prices = {};
     symbols.forEach(symbol => {
-      const coingeckoId = symbol.toLowerCase();
-      if (response.data[coingeckoId]) {
+      const coingeckoId = COINGECKO_IDS[symbol.toUpperCase()];
+      if (coingeckoId && response.data[coingeckoId]) {
         prices[symbol] = response.data[coingeckoId].usd;
       }
     });
 
+    console.log("Mapped prices:", prices);
     return prices;
   } catch (error) {
     console.error('Error fetching multiple prices from Coingecko:', error.message);

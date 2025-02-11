@@ -22,10 +22,11 @@ const getCurrentPrice = async (symbol) => {
  * @param {Array<string>} symbols - An array of asset symbols (e.g., ['BTC', 'ETH', 'DOGE'])
  * @returns {Promise<Object>} - A dictionary of prices { BTC: 42675.00, ETH: 3245.50, DOGE: 0.084 }
  */
-const getCurrentPrices = async (symbols) => {
+const getCurrentPrices = async (symbols, token) => {
   try {
     const symbolsParam = symbols.join(',');
     const response = await axios.get(`${API_URL}/current`, {
+      headers: {'x-auth-token': token},
       params: { symbols: symbolsParam },
     });
     return response.data.prices;

@@ -45,7 +45,6 @@ exports.getProfitLoss = async (req, res) => {
   try {
     // Fetch user trades
     const trades = await Trade.getTradesByUserId(userId);
-    console.log("User Trades:", trades);
 
     if (!trades.length) return res.json({ profitLoss: 0, message: 'No trades found.' });
 
@@ -53,7 +52,6 @@ exports.getProfitLoss = async (req, res) => {
 
     // Process each trade to calculate profit/loss per asset
     for (let trade of trades) {
-      console.log('Processing trade:', trade);
 
       const { amount, price, type, stock_symbol } = trade;  // Directly use stock_symbol
 
@@ -84,7 +82,7 @@ exports.getProfitLoss = async (req, res) => {
     const profitLossResults = [];
     for (let assetSymbol in assetData) {
       const { totalAmount, totalCost } = assetData[assetSymbol];
-
+      console.log("asset symbil:", assetSymbol)
       // Fetch current price for the asset (using original stock_symbol)
       const currentPrice = await priceService.getCurrentPrice(assetSymbol);
       console.log("current price:",currentPrice)

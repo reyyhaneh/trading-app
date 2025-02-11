@@ -34,14 +34,20 @@ const UserAssets = () => {
         });
         setBalance(balanceResponse.data.balance);
   
-        // Fetch user's assets from backend
+        // Fetch user's assets
         const assetsResponse = await axios.get('http://localhost:5000/api/profile/assets', {
           headers: { 'x-auth-token': token },
         });
-        const fetchedAssets = assetsResponse.data.assets || [];
+
   
-        // Extract unique asset symbols
+        const fetchedAssets = assetsResponse.data.assets || [];
+        console.log("fetched assets: ", fetchedAssets)
+
+  
+        // Extract unique asset symbols (uppercase)
         const symbols = [...new Set(fetchedAssets.map(asset => asset.asset_symbol.toUpperCase()))];
+  
+        console.log("Asset symbols:", symbols);
   
         if (symbols.length === 0) {
           setAssets(defaultAssets);
@@ -50,7 +56,9 @@ const UserAssets = () => {
         }
   
         // Fetch current prices for all symbols from backend
-        const prices = await priceService.getCurrentPrices(symbols, token); // { BTCUSDT: 21653.24, ETHUSDT: 1586.32, ... }
+        const prices = await priceService.getCurrentPrices(symbols, token);
+  
+        console.log("Fetched Prices:", prices);
   
         // Update assets with current prices
         const updatedAssets = fetchedAssets.map(asset => ({
@@ -68,7 +76,7 @@ const UserAssets = () => {
     };
   
     fetchAssetsAndPrices();
-  }, []); // Run once on mount
+  }, []);
 
   // Optional: Periodically update asset prices (e.g., every 5 minutes)
   useEffect(() => {
