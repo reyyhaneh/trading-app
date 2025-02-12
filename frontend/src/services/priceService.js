@@ -7,9 +7,13 @@ const API_URL = 'http://localhost:5000/api/price';
  * @param {string} symbol - The asset symbol (e.g., 'BTC')
  * @returns {Promise<number>} - The current price in USD
  */
-const getCurrentPrice = async (symbol) => {
+const getCurrentPrice = async (symbol, token) => {
   try {
-    const response = await axios.get(`${API_URL}/current/${symbol}`);
+    console.log("get current price 1 symbol:", symbol)
+    const response = await axios.get(`${API_URL}/current/${symbol}`,{
+      headers: {'x-auth-token': token},
+    }
+    );
     return response.data.price;
   } catch (error) {
     console.error(`Error fetching price for ${symbol}:`, error.response?.data?.error || error.message);

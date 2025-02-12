@@ -12,6 +12,11 @@ const coingeckoSymbolMapping = {
   DOT: 'polkadot',
   SOL: 'solana',
   MATIC: 'matic-network',
+  BTCUSDT: 'bitcoin',
+  ETHUSDT: 'ethereum',
+  DOGEUSDT: 'dogecoin',
+
+
 };
 const COINGECKO_IDS = {
   BTC: "bitcoin",

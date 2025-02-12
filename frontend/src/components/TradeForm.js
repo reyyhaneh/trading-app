@@ -24,7 +24,7 @@ const TradeForm = () => {
           return;
         }
         const { token } = user;
-
+        console.log("trade form symbol:", symbol)
         const price = await priceService.getCurrentPrice(symbol, token);
         setCurrentPrice(price);
         setPrice((amount * price).toFixed(2)); // Update price based on amount

@@ -24,24 +24,23 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      <div className="flex flex-col md:flex-row gap-4">
-        {/* TradingView Section */}
-        <div className="flex-1 bg-white rounded-lg shadow-md p-4">
+    <div className="container mx-auto my-10 px-4">
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* TradingView Widget */}
+        <div className="bg-white shadow-md rounded-lg p-6 col-span-2">
           <TradingViewWidget selectedSymbol={selectedSymbol} />
         </div>
 
-        {/* TradeForm and Watchlist Section */}
-        <div className="w-full md:w-1/3">
-          <div className="bg-white rounded-lg shadow-md p-4 h-full">
-            <TradeForm selectedSymbol={selectedSymbol} />
-            <div className="mt-4">
-              <Watchlist
-                selectedSymbol={selectedSymbol}
-                onSelect={setSelectedSymbol}
-                onAddSymbol={handleAddSymbol}
-              />
-            </div>
+        {/* TradeForm & Watchlist */}
+        <div className="bg-white shadow-md rounded-lg p-6">
+          <TradeForm selectedSymbol={selectedSymbol} />
+          <div className="mt-4">
+            <Watchlist
+              selectedSymbol={selectedSymbol}
+              onSelect={setSelectedSymbol}
+              onAddSymbol={handleAddSymbol}
+            />
           </div>
         </div>
       </div>
