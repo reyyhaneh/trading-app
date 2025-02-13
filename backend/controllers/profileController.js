@@ -82,10 +82,8 @@ exports.getProfitLoss = async (req, res) => {
     const profitLossResults = [];
     for (let assetSymbol in assetData) {
       const { totalAmount, totalCost } = assetData[assetSymbol];
-      console.log("asset symbil:", assetSymbol)
       // Fetch current price for the asset (using original stock_symbol)
       const currentPrice = await priceService.getCurrentPrice(assetSymbol);
-      console.log("current price:",currentPrice)
 
       // Calculate the profit or loss for this asset
       const currentValue = totalAmount * currentPrice;
@@ -98,7 +96,6 @@ exports.getProfitLoss = async (req, res) => {
         totalCost: totalCost.toFixed(2),
         currentPrice: currentPrice.toFixed(2),
       });
-      console.log("profit loss:", profitLossResults)
     }
 
     res.json({ profitLossResults });

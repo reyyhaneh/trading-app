@@ -9,7 +9,6 @@ const API_URL = 'http://localhost:5000/api/price';
  */
 const getCurrentPrice = async (symbol, token) => {
   try {
-    console.log("get current price 1 symbol:", symbol)
     const response = await axios.get(`${API_URL}/current/${symbol}`,{
       headers: {'x-auth-token': token},
     }

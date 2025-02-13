@@ -3,11 +3,11 @@ import tradeService from '../services/TradeService';
 import priceService from '../services/priceService';  // Import backend price service
 
 const TradeForm = () => {
-  const [symbol, setSymbol] = useState('BTCUSDT'); // Default symbol
+  const [symbol, setSymbol] = useState('BTC'); // Default symbol
   const [amount, setAmount] = useState('');
   const [price, setPrice] = useState('');
   const [currentPrice, setCurrentPrice] = useState('');
-  const [symbolsList, setSymbolsList] = useState(['BTCUSDT', 'ETHUSDT', 'DOGEUSDT']); // Available symbols
+  const [symbolsList, setSymbolsList] = useState(['BTC', 'ETH', 'DOGE']); // Available symbols
   const [loadingPrice, setLoadingPrice] = useState(false);
   const [priceError, setPriceError] = useState(null);
 
@@ -24,7 +24,6 @@ const TradeForm = () => {
           return;
         }
         const { token } = user;
-        console.log("trade form symbol:", symbol)
         const price = await priceService.getCurrentPrice(symbol, token);
         setCurrentPrice(price);
         setPrice((amount * price).toFixed(2)); // Update price based on amount
