@@ -1,11 +1,39 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
-const UserProgress = ({ achievements = [], challenges = [], xp = { current: 0, nextLevel: 100 } }) => {
+const UserProgress = () => {
+  const [tasks, setTasks] = useState([]);
+  const [xp, setXp] = useState({ current: 0, nextLevel: 100 });
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchProgress = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || !user.token) {
+          setError('User is not authenticated.');
+          return;
+        }
+
+        const response = await axios.get('http://localhost:5000/api/profile/progress', {
+          headers: { 'x-auth-token': user.token },
+        });
+
+        setTasks(response.data.tasks);
+      } catch (err) {
+        console.error('Error fetching progress:', err);
+        setError('Failed to load progress.');
+      }
+    };
+
+    fetchProgress();
+  }, []);
+
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
       <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">User Progress</h3>
 
-      {/* XP Progress */}
+      {/* XP Progress Bar */}
       <div className="mb-6">
         <p className="text-gray-700 font-medium">XP Progress</p>
         <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
@@ -19,36 +47,21 @@ const UserProgress = ({ achievements = [], challenges = [], xp = { current: 0, n
         </p>
       </div>
 
-      {/* Achievements */}
-      <div className="mb-6">
-        <p className="text-gray-700 font-medium">Achievements</p>
-        <div className="flex flex-wrap gap-2 mt-2">
-          {achievements.map((achievement, index) => (
-            <span
-              key={index}
-              className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full shadow-sm"
-            >
-              {achievement}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Tasks */}
+      {/* Tasks Progress */}
       <div>
-        <p className="text-gray-700 font-medium">Challanges</p>
+        <p className="text-gray-700 font-medium">Challenges</p>
         <ul className="mt-2">
-          {challenges.map((task, index) => (
+          {tasks.map((task, index) => (
             <li key={index} className="mb-4">
-              <p className="text-sm text-gray-600">{task.name}</p>
+              <p className="text-sm text-gray-600">{task.task_name}</p>
               <div className="w-full bg-gray-200 rounded-full h-3 mt-1">
                 <div
-                  className="bg-blue-500 h-3 rounded-full"
+                  className={`h-3 rounded-full ${task.completed ? 'bg-green-500' : 'bg-blue-500'}`}
                   style={{ width: `${Math.min(task.progress, 100)}%` }}
                 ></div>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                {task.progress}% completed
+                {task.progress}% completed {task.completed ? '✅' : ''}
               </p>
             </li>
           ))}
