@@ -19,7 +19,12 @@ const UserProgress = () => {
           headers: { 'x-auth-token': user.token },
         });
 
-        setTasks(response.data.tasks);
+        const uniqueTasks = response.data.tasks.reduce((acc, task) => {
+          if (!acc.find(t => t.task_name === task.task_name)) acc.push(task);
+          return acc;
+        }, []);
+
+        setTasks(uniqueTasks);
       } catch (err) {
         console.error('Error fetching progress:', err);
         setError('Failed to load progress.');

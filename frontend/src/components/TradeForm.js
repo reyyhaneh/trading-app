@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import tradeService from '../services/TradeService';
-import priceService from '../services/priceService';  // Import backend price service
+import priceService from '../services/priceService';
+import { debounce } from 'lodash';
 
 const TradeForm = () => {
   const [symbol, setSymbol] = useState('BTC'); // Default symbol
@@ -11,11 +12,12 @@ const TradeForm = () => {
   const [loadingPrice, setLoadingPrice] = useState(false);
   const [priceError, setPriceError] = useState(null);
 
-  // Fetch the current price from backend
-  useEffect(() => {
-    const fetchPrice = async () => {
+  /** Fetches price from backend */
+  const fetchPrice = useCallback(
+    debounce(async (symbol) => {
       setLoadingPrice(true);
       setPriceError(null);
+
       try {
         const user = JSON.parse(localStorage.getItem('user'));
         if (!user || !user.token) {
@@ -24,9 +26,10 @@ const TradeForm = () => {
           return;
         }
         const { token } = user;
-        const price = await priceService.getCurrentPrice(symbol, token);
-        setCurrentPrice(price);
-        setPrice((amount * price).toFixed(2)); // Update price based on amount
+        const fetchedPrice = await priceService.getCurrentPrice(symbol, token);
+
+        setCurrentPrice(fetchedPrice);
+        setPrice(amount ? (amount * fetchedPrice).toFixed(2) : ''); // Update price only if amount is set
       } catch (error) {
         console.error('Error fetching price:', error);
         setPriceError('Failed to fetch the current price. Please try again.');
@@ -35,14 +38,56 @@ const TradeForm = () => {
       } finally {
         setLoadingPrice(false);
       }
-    };
+    }, 800), // Debounce time = 800ms
+  []);
 
+  /** Runs once on symbol change */
+  useEffect(() => {
     if (symbol) {
-      fetchPrice();
+      fetchPrice(symbol);
     }
-  }, [symbol, amount]); // Trigger the effect when symbol or amount changes
+  }, [symbol]); // Fetches price only when symbol changes
 
-  // Handle buying
+  /** Runs every 1 minute to refresh the price */
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchPrice(symbol);
+    }, 60000); // Fetch price every 60 seconds
+
+    return () => clearInterval(interval); // Cleanup interval on unmount
+  }, [symbol]);
+
+  // Handles symbol change
+  const handleSymbolChange = (e) => {
+    const newSymbol = e.target.value;
+    setSymbol(newSymbol);
+    setAmount('');
+    setPrice('');
+  };
+
+  // Handles amount change with debounced price update
+  const handleAmountChange = (e) => {
+    const newAmount = e.target.value;
+    setAmount(newAmount);
+
+    if (currentPrice) {
+      const newPrice = (newAmount * currentPrice).toFixed(2);
+      setPrice(newPrice);
+    }
+  };
+
+  // Handles manual price change
+  const handlePriceChange = (e) => {
+    const newPrice = e.target.value;
+    setPrice(newPrice);
+
+    if (currentPrice) {
+      const newAmount = (newPrice / currentPrice).toFixed(6);
+      setAmount(newAmount);
+    }
+  };
+
+  // Handles buying
   const buy = async () => {
     if (!amount || !price) {
       alert('Please enter a valid amount and price.');
@@ -64,7 +109,7 @@ const TradeForm = () => {
     }
   };
 
-  // Handle selling
+  // Handles selling
   const sell = async () => {
     if (!amount || !price) {
       alert('Please enter a valid amount and price.');
@@ -83,33 +128,6 @@ const TradeForm = () => {
     } catch (error) {
       console.error('Trade failed', error);
       alert('Trade failed. Please try again.');
-    }
-  };
-
-  // Handle symbol change
-  const handleSymbolChange = (e) => {
-    setSymbol(e.target.value);
-    setAmount('');
-    setPrice('');
-  };
-
-  // Handle amount change
-  const handleAmountChange = (e) => {
-    const newAmount = e.target.value;
-    setAmount(newAmount);
-    if (currentPrice) {
-      const newPrice = (newAmount * currentPrice).toFixed(2);
-      setPrice(newPrice);
-    }
-  };
-
-  // Handle price change
-  const handlePriceChange = (e) => {
-    const newPrice = e.target.value;
-    setPrice(newPrice);
-    if (currentPrice) {
-      const newAmount = (newPrice / currentPrice).toFixed(6);
-      setAmount(newAmount);
     }
   };
 
@@ -207,5 +225,6 @@ const TradeForm = () => {
     </div>
   );
 };
+
 
 export default TradeForm;
