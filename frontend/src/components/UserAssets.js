@@ -1,128 +1,75 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import priceService from '../services/priceService';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+const RETRY_DELAY = 5000; // 5 seconds retry on failure
 
 const UserAssets = () => {
-  // Default test data (optional fallback)
-  const defaultAssets = [
-    { name: 'Bitcoin', asset_symbol: 'BTCUSDT', currentPrice: 0, amount: 1.5 },
-    { name: 'Ethereum', asset_symbol: 'ETHUSDT', currentPrice: 0, amount: 10 },
-    { name: 'Dogecoin', asset_symbol: 'DOGEUSDT', currentPrice: 0, amount: 5000 },
-  ];
+  const [assets, setAssets] = useState([]);
+  const [balance, setBalance] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(localStorage.getItem("assetsTimestamp") || 0);
 
-  const [assets, setAssets] = useState(defaultAssets); // Initial state
-  const [balance, setBalance] = useState(null); // User balance
-  const [loading, setLoading] = useState(true); // Loading state
-  const [error, setError] = useState(null); // Error state
+  const fetchAssets = async (retry = false) => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user || !user.token) {
+        setError("User not authenticated.");
+        setLoading(false);
+        return;
+      }
+
+      const now = Date.now();
+      if (!retry && now - lastUpdated < CACHE_DURATION) {
+        console.log("⏳ Using cached asset data.");
+        setLoading(false);
+        return;
+      }
+
+      const { token } = user;
+
+      // Fetch user balance
+      const balanceResponse = await axios.get("http://localhost:5000/api/profile/balance", {
+        headers: { "x-auth-token": token },
+      });
+      setBalance(balanceResponse.data.balance);
+
+      // Fetch user assets
+      const assetsResponse = await axios.get("http://localhost:5000/api/profile/assets", {
+        headers: { "x-auth-token": token },
+      });
+
+      const fetchedAssets = assetsResponse.data.assets || [];
+
+      setAssets(fetchedAssets);
+      setLastUpdated(now);
+      localStorage.setItem("assetsTimestamp", now);
+    } catch (error) {
+      if (error.response?.status === 429) {
+        console.warn("⚠️ Rate limit hit, retrying in 5s...");
+        setTimeout(() => fetchAssets(true), RETRY_DELAY);
+      } else {
+        setError("Failed to fetch assets.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchAssetsAndPrices = async () => {
-      try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user || !user.token) {
-          setError('User not authenticated.');
-          setLoading(false);
-          return;
-        }
-  
-        const { token } = user;
-  
-        // Fetch user's balance first
-        const balanceResponse = await axios.get('http://localhost:5000/api/profile/balance', {
-          headers: { 'x-auth-token': token },
-        });
-        setBalance(balanceResponse.data.balance);
-  
-        // Fetch user's assets
-        const assetsResponse = await axios.get('http://localhost:5000/api/profile/assets', {
-          headers: { 'x-auth-token': token },
-        });
-
-  
-        const fetchedAssets = assetsResponse.data.assets || [];
-
-  
-        // Extract unique asset symbols (uppercase)
-        const symbols = [...new Set(fetchedAssets.map(asset => asset.asset_symbol.toUpperCase()))];
-  
-  
-        if (symbols.length === 0) {
-          setAssets(defaultAssets);
-          setLoading(false);
-          return;
-        }
-  
-        // Fetch current prices for all symbols from backend
-        const prices = await priceService.getCurrentPrices(symbols, token);
-  
-  
-        // Update assets with current prices
-        const updatedAssets = fetchedAssets.map(asset => ({
-          ...asset,
-          currentPrice: prices[asset.asset_symbol.toUpperCase()] || 0,
-        }));
-  
-        setAssets(updatedAssets.length ? updatedAssets : defaultAssets);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching user assets or prices:', error.response?.data?.error || error.message);
-        setError('Failed to fetch assets or prices.');
-        setLoading(false);
-      }
-    };
-  
-    fetchAssetsAndPrices();
+    fetchAssets();
+    const interval = setInterval(fetchAssets, CACHE_DURATION);
+    return () => clearInterval(interval);
   }, []);
 
-  // Optional: Periodically update asset prices (e.g., every 5 minutes)
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user || !user.token) {
-          console.error('User not authenticated.');
-          return;
-        }
-
-        const { token } = user;
-
-        // Extract unique asset symbols
-        const symbols = [...new Set(assets.map(asset => asset.asset_symbol.toUpperCase()))];
-
-        if (symbols.length === 0) return;
-
-        // Fetch current prices for all symbols from backend
-        const prices = await priceService.getCurrentPrices(symbols, token);
-
-        // Update assets with new prices
-        const updatedAssets = assets.map(asset => ({
-          ...asset,
-          currentPrice: prices[asset.asset_symbol.toUpperCase()] || asset.currentPrice,
-        }));
-
-        setAssets(updatedAssets);
-      } catch (error) {
-        console.error('Error updating asset prices:', error.response?.data?.error || error.message);
-      }
-    }, 5 * 60 * 1000); // 5 minutes
-
-    return () => clearInterval(interval); // Cleanup on unmount
-  }, [assets]); // Depend on assets to get the latest symbols
-
-  if (loading) {
-    return <div className="text-center">Loading assets...</div>;
-  }
-
-  if (error) {
-    return <div className="text-center text-red-500">{error}</div>;
-  }
+  if (loading) return <div className="text-center">Loading assets...</div>;
+  if (error) return <div className="text-center text-red-500">{error}</div>;
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
       <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">Your Assets</h3>
 
-      {/* Display the balance if it's been fetched */}
       {balance !== null && (
         <div className="mb-4 text-center text-xl font-bold text-green-600">
           Current Balance: ${Number(balance).toFixed(2)}
@@ -137,28 +84,16 @@ const UserAssets = () => {
             <thead>
               <tr>
                 <th className="border-b-2 py-2 px-4 text-gray-700">Asset</th>
-                <th className="border-b-2 py-2 px-4 text-gray-700">Current Price</th>
                 <th className="border-b-2 py-2 px-4 text-gray-700">Amount Owned</th>
-                <th className="border-b-2 py-2 px-4 text-gray-700">Total Value</th>
               </tr>
             </thead>
             <tbody>
-              {assets.map((asset, index) => {
-                // Safely handle undefined currentPrice
-                const price = asset.currentPrice !== undefined ? Number(asset.currentPrice) : 0;
-                return (
-                  <tr key={index} className="border-b">
-                    <td className="py-2 px-4 text-gray-800">{asset.name}</td>
-                    <td className="py-2 px-4 text-gray-800">
-                      ${price.toFixed(2)}
-                    </td>
-                    <td className="py-2 px-4 text-gray-800">{asset.amount}</td>
-                    <td className="py-2 px-4 text-gray-800">
-                      ${(price * asset.amount).toFixed(2)}
-                    </td>
-                  </tr>
-                );
-              })}
+              {assets.map((asset, index) => (
+                <tr key={index} className="border-b">
+                  <td className="py-2 px-4 text-gray-800">{asset.asset_symbol}</td>
+                  <td className="py-2 px-4 text-gray-800">{asset.amount}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
