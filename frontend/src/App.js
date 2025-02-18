@@ -10,7 +10,6 @@ import Navbar from './components/Navbar'
 import Profile from './pages/Profile'
 //import 'bootstrap/dist/css/bootstrap.min.css';
 import EmailVerification from './pages/EmailVerification'
-import TradingViewWidget from './pages/TradingViewWidget';
 
 
 function App() {
@@ -26,7 +25,7 @@ function App() {
           <Route path="/dashboard" element={<PrivateRoute Component={Dashboard} />} />
           <Route path="/profile" element={<PrivateRoute Component={Profile}/>} />
           <Route path="/verify-email" element= {<EmailVerification />} />
-          <Route path="/trading-view" element= {<TradingViewWidget />} />
+
 
         </Routes>
       </div>
