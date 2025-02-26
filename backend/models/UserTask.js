@@ -2,7 +2,12 @@ const pool = require('../config/db');
 
 class UserTask {
   static async getUserTasks(userId) {
-    const query = 'SELECT * FROM user_tasks WHERE user_id = $1 AND completed = FALSE ORDER BY created_at DESC';
+    const query = `
+      SELECT * FROM user_tasks 
+      WHERE user_id = $1 
+      ORDER BY created_at DESC 
+      LIMIT 5;
+    `;
     const { rows } = await pool.query(query, [userId]);
     return rows;
   }
@@ -17,18 +22,17 @@ class UserTask {
     const { rows } = await pool.query(query, [userId, taskName]);
     return rows[0];
   }
-
-  static async updateProgress(userId, taskName, progressIncrease) {
+  static async updateProgress(userId, taskName, newProgress) {
     const query = `
       UPDATE user_tasks
-      SET progress = LEAST(progress + $1, 100),  -- Ensure max 100%
-          completed = CASE WHEN progress + $1 >= 100 THEN TRUE ELSE completed END,
+      SET progress = LEAST($1, 100),  -- Set new progress, ensuring it does not exceed 100%
+          completed = CASE WHEN $1 >= 100 THEN TRUE ELSE completed END,
           updated_at = NOW()
-      WHERE user_id = $2 AND task_name = $3
+      WHERE user_id = $2 AND task_name = $3 AND completed = FALSE
       RETURNING *;
     `;
   
-    const { rows } = await pool.query(query, [progressIncrease, userId, taskName]);
+    const { rows } = await pool.query(query, [newProgress, userId, taskName]);
     const updatedTask = rows[0];
   
     // If task is completed, assign a new task dynamically
@@ -53,7 +57,7 @@ class UserTask {
   
     return updatedTask;
   }
-  
+    
 }
 
 module.exports = UserTask;

@@ -7,9 +7,9 @@ const trackTradeProgress = async (req, res, next) => {
     // Get all active tasks
     const tasks = await UserTask.getUserTasks(userId);
 
-    // Find the **latest** trade-related task using regex to match "Make N Trades"
+    // Find the latest trade-related task using regex to match "Make N Trades"
     const tradeTasks = tasks
-      .filter(task => /^Make \d+ Trades$/i.test(task.task_name)) // Only consider tasks like "Make 5 Trades"
+      .filter(task => /^Make \d+ Trades$/i.test(task.task_name) && !task.completed) // Only incomplete tasks
       .sort((a, b) => b.created_at - a.created_at); // Sort by latest task
 
     const tradeTask = tradeTasks.length > 0 ? tradeTasks[0] : null; // Get the most recent task
@@ -17,25 +17,33 @@ const trackTradeProgress = async (req, res, next) => {
     console.log("🎯 Latest Trade Task:", tradeTask);
 
     if (tradeTask && !tradeTask.completed) {
-      // Update task progress
-      const updatedProgress = Math.min(tradeTask.progress + 20, 100);
-      await UserTask.updateProgress(userId, tradeTask.task_name, updatedProgress);
+      // Always increment by 20% for each trade
+      const progressIncrease = 20;
 
-      console.log(`📈 Progress updated for ${tradeTask.task_name}: ${updatedProgress}%`);
-
-      // If task is completed, assign a new one
-      if (updatedProgress >= 100) {
+      // If the task is completed (100% progress), mark it as completed and create a new task
+      if (tradeTask.progress + progressIncrease >= 100) {
         console.log(`🎉 User ${userId} completed: ${tradeTask.task_name}`);
         
-        // Extract the current number of trades (e.g., "Make 5 Trades" -> 5)
-        const currentTradeGoal = parseInt(tradeTask.task_name.match(/\d+/)[0]);
+        // Mark the task as completed
+        await UserTask.updateProgress(userId, tradeTask.task_name, 100);
 
-        // Assign the next level task (incrementing by 5)
+        // Create the next task with incremented trades
+        const currentTradeGoal = parseInt(tradeTask.task_name.match(/\d+/)[0]);
         const newTradeGoal = currentTradeGoal + 5;
         const newTaskName = `Make ${newTradeGoal} Trades`;
 
-        console.log(`🆕 Assigning new task: ${newTaskName}`);
-        await UserTask.createTask(userId, newTaskName);
+        // Ensure we don't duplicate an already existing task
+        const existingTasks = await UserTask.getUserTasks(userId);
+        const duplicateTask = existingTasks.find(task => task.task_name === newTaskName);
+
+        if (!duplicateTask) {
+          await UserTask.createTask(userId, newTaskName);
+          console.log(`🆕 Assigning new task: ${newTaskName}`);
+        }
+      } else {
+        // Update task progress without marking it completed
+        await UserTask.updateProgress(userId, tradeTask.task_name, tradeTask.progress + progressIncrease);
+        console.log(`📈 Progress updated for ${tradeTask.task_name}: ${tradeTask.progress + progressIncrease}%`);
       }
     }
 

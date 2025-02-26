@@ -38,71 +38,94 @@ const calculateProfitLossOverTime = (trades, currentPrice) => {
 
   return profitLossData;
 };
-
+// Calculate profit/loss using average cost
 exports.getProfitLoss = async (req, res) => {
   const userId = req.user.id;
 
   try {
+    console.log(`📢 Fetching trades for user: ${userId}`);
+
     // Fetch user trades
     const trades = await Trade.getTradesByUserId(userId);
 
-    if (!trades.length) return res.json({ profitLoss: 0, message: 'No trades found.' });
+    if (!trades.length) {
+      console.log("ℹ️ No trades found for user.");
+      return res.json({ profitLoss: 0, message: "No trades found." });
+    }
 
-    let assetData = {}; // To hold profit/loss data for each asset symbol
+    let assetData = {}; // Store total spent, total earned, and amount per asset
+    let assetSymbols = new Set(); // Store unique asset symbols for batch request
 
-    // Process each trade to calculate profit/loss per asset
+    // Process each trade
     for (let trade of trades) {
-
-      const { amount, price, type, stock_symbol } = trade;  // Directly use stock_symbol
+      const { amount, price, type, stock_symbol } = trade;
 
       if (!stock_symbol) {
-        console.warn(`Trade with missing stock_symbol: ${JSON.stringify(trade)}`);
-        continue;  // Skip this trade if stock_symbol is undefined or null
+        console.warn(`⚠️ Trade with missing stock_symbol: ${JSON.stringify(trade)}`);
+        continue;
       }
 
-      // Initialize asset data if not already set
       if (!assetData[stock_symbol]) {
-        assetData[stock_symbol] = { totalAmount: 0, totalCost: 0, currentPrice: 0, profitLoss: 0 };
+        assetData[stock_symbol] = { totalAmount: 0, totalSpent: 0, totalEarned: 0, profitLoss: 0 };
       }
 
       const tradeAmount = parseFloat(amount);
       const tradePrice = parseFloat(price);
+      const totalValue = tradeAmount * tradePrice;
 
-      // Update total amount and total cost based on trade type
-      if (type === 'buy') {
+      // Update total spent & earned based on trade type
+      if (type === "buy") {
         assetData[stock_symbol].totalAmount += tradeAmount;
-        assetData[stock_symbol].totalCost += tradeAmount * tradePrice;
-      } else if (type === 'sell') {
+        assetData[stock_symbol].totalSpent += totalValue;
+      } else if (type === "sell") {
         assetData[stock_symbol].totalAmount -= tradeAmount;
-        assetData[stock_symbol].totalCost -= tradeAmount * tradePrice;
+        assetData[stock_symbol].totalEarned += totalValue;
       }
-    }
 
-    // Now calculate profit/loss for each asset
+      console.log(`📊 Updated Data for ${stock_symbol}:`, assetData[stock_symbol]);
+    }
+    const symbolsArray = Array.from(assetSymbols);
+    console.log(`🛒 Fetching prices for: ${symbolsArray.join(", ")}`);
+
+    const prices = await priceService.getCurrentPrices(symbolsArray); // Fetch all prices at once!
+
+    // Now calculate profit/loss
     const profitLossResults = [];
     for (let assetSymbol in assetData) {
-      const { totalAmount, totalCost } = assetData[assetSymbol];
-      // Fetch current price for the asset (using original stock_symbol)
-      const currentPrice = await priceService.getCurrentPrice(assetSymbol);
+      const { totalAmount, totalSpent, totalEarned } = assetData[assetSymbol];
+      const currentPrice = prices[assetSymbol] || 0;
 
-      // Calculate the profit or loss for this asset
+      // Calculate the current value of the asset
       const currentValue = totalAmount * currentPrice;
-      const profitLoss = currentValue - totalCost;
+
+      // Correct profit/loss calculation:
+      const profitLoss = totalEarned + currentValue - totalSpent;
+
+      console.log(`🔎 Calculations for ${assetSymbol}:
+        - Total Amount: ${totalAmount}
+        - Total Spent: ${totalSpent}
+        - Total Earned: ${totalEarned}
+        - Current Price: ${currentPrice}
+        - Current Value: ${currentValue}
+        - Profit/Loss: ${profitLoss}
+      `);
 
       profitLossResults.push({
         assetSymbol,
         profitLoss: profitLoss.toFixed(2),
         totalAmount: totalAmount.toFixed(2),
-        totalCost: totalCost.toFixed(2),
+        totalSpent: totalSpent.toFixed(2),
+        totalEarned: totalEarned.toFixed(2),
         currentPrice: currentPrice.toFixed(2),
       });
     }
 
-    res.json({ profitLossResults });
+    console.log("✅ Final Profit/Loss Results:", profitLossResults);
 
+    res.json({ profitLossResults });
   } catch (err) {
-    console.error('Error getting profit loss:', err);
-    res.status(500).send('Server error');
+    console.error("❌ Error getting profit loss:", err);
+    res.status(500).send("Server error");
   }
 };
 

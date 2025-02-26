@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache duration
-const RETRY_DELAY = 5000; // 5 seconds retry delay in case of 429 error
+const RETRY_DELAY = 3000; // Start with 3 seconds delay
+const MAX_RETRY = 5; // Maximum retry attempts
 
 const ProfitLoss = () => {
   const [profitLoss, setProfitLoss] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(localStorage.getItem("profitLossTimestamp") || 0);
 
-  const fetchProfitLoss = async (retry = false) => {
+  const fetchProfitLoss = async (retryCount = 0) => {
     try {
       const user = JSON.parse(localStorage.getItem("user"));
       if (!user || !user.token) {
@@ -19,34 +18,27 @@ const ProfitLoss = () => {
         return;
       }
 
-      const now = Date.now();
-      if (!retry && now - lastUpdated < CACHE_DURATION) {
-        const cachedData = JSON.parse(localStorage.getItem("profitLossData"));
-        if (cachedData) {
-          console.log("⏳ Using cached profit/loss data.");
-          setProfitLoss(cachedData);
-          setLoading(false);
-          return;
-        }
-      }
+      console.log("📢 Fetching profit/loss data...");
 
       const response = await axios.get("http://localhost:5000/api/profile/pl", {
         headers: { "x-auth-token": user.token },
       });
 
       if (response.data?.profitLossResults?.length > 0) {
+        console.log("✅ Profit/Loss Data Received:", response.data.profitLossResults);
         setProfitLoss(response.data.profitLossResults);
-        setLastUpdated(now);
-        localStorage.setItem("profitLossTimestamp", now);
-        localStorage.setItem("profitLossData", JSON.stringify(response.data.profitLossResults));
       } else {
         setError("No trades found.");
         setProfitLoss([]);
       }
     } catch (err) {
-      if (err.response?.status === 429) {
-        console.warn("⚠️ Rate limit hit, retrying in 5s...");
-        setTimeout(() => fetchProfitLoss(true), RETRY_DELAY);
+      console.error("❌ Error fetching profit/loss:", err);
+
+      // Retry mechanism for 429 error
+      if (err.response?.status === 429 && retryCount < MAX_RETRY) {
+        const retryAfter = Math.min(RETRY_DELAY * Math.pow(2, retryCount), 60000); // Exponential backoff up to 60s
+        console.warn(`⚠️ Rate limit hit, retrying in ${retryAfter / 1000}s...`);
+        setTimeout(() => fetchProfitLoss(retryCount + 1), retryAfter);
       } else {
         setError("An error occurred while fetching data.");
       }
@@ -57,7 +49,7 @@ const ProfitLoss = () => {
 
   useEffect(() => {
     fetchProfitLoss();
-    const interval = setInterval(fetchProfitLoss, CACHE_DURATION);
+    const interval = setInterval(fetchProfitLoss, 60000); // Update prices every 1 minute
     return () => clearInterval(interval);
   }, []);
 
@@ -76,7 +68,11 @@ const ProfitLoss = () => {
                 <span className="font-medium text-gray-700">{asset.assetSymbol}</span>
                 <span className="text-xs text-gray-500">${parseFloat(asset.currentPrice).toFixed(2)}</span>
               </div>
-              <div className={`font-medium ${parseFloat(asset.profitLoss) >= 0 ? "text-green-600" : "text-red-600"}`}>
+              <div
+                className={`font-medium ${
+                  parseFloat(asset.profitLoss) >= 0 ? "text-green-600" : "text-red-600"
+                }`}
+              >
                 ${parseFloat(asset.profitLoss).toFixed(2)}
               </div>
             </div>

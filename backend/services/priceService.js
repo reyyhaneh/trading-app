@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const COINGECKO_API_BASE_URL = 'https://api.coingecko.com/api/v3';
+const COINGECKO_API_BASE_URL = 'https://api.coingecko.com/api/v3/simple/price';
 const coingeckoSymbolMapping = {
   BTC: 'bitcoin',
   ETH: 'ethereum',
@@ -31,7 +31,7 @@ const getCurrentPrice = async (symbol) => {
     const coingeckoId = coingeckoSymbolMapping[symbol.toUpperCase()];
     
 
-    const response = await axios.get(`${COINGECKO_API_BASE_URL}/simple/price`, {
+    const response = await axios.get(COINGECKO_API_BASE_URL, {
       params: {
         ids: coingeckoId,
         vs_currencies: 'usd',
@@ -48,43 +48,36 @@ const getCurrentPrice = async (symbol) => {
     throw new Error(`Failed to fetch price for ${symbol}`);
   }
 };
-const getCurrentPrices = async (symbols) => {
-  try {
-    // Map symbols to Coingecko IDs
-    const coingeckoIds = symbols
-      .map(sym => COINGECKO_IDS[sym.toUpperCase()])
-      .filter(id => id !== undefined) // Remove unmapped symbols
-      .join(',');
 
-    if (!coingeckoIds) {
-      throw new Error("No valid symbols mapped to Coingecko IDs.");
+
+  const getCurrentPrices = async (symbols) => {
+    try {
+      const symbolsQuery = symbols.map((sym) => sym.toLowerCase()).join(",");
+
+      const response = await axios.get(COINGECKO_API_BASE_URL, {
+        params: {
+          ids: symbolsQuery, // Pass multiple symbols
+          vs_currencies: "usd",
+        },
+      });
+
+      const prices = {};
+      symbols.forEach((symbol) => {
+        const lowerSymbol = symbol.toLowerCase();
+        if (response.data[lowerSymbol]) {
+          prices[symbol] = response.data[lowerSymbol].usd;
+        }
+      });
+
+      console.log("📉 Batch Prices Fetched:", prices);
+      return prices;
+    } catch (error) {
+      console.error("❌ Error fetching batch prices from Coingecko:", error.message);
+      throw new Error("Failed to fetch batch prices from Coingecko");
     }
-
-
-    // Fetch prices from Coingecko
-    const response = await axios.get(`${COINGECKO_API_BASE_URL}/simple/price`, {
-      params: {
-        ids: coingeckoIds,
-        vs_currencies: 'usd',
-      },
-    });
-
-
-    // Map back to original symbols
-    const prices = {};
-    symbols.forEach(symbol => {
-      const coingeckoId = COINGECKO_IDS[symbol.toUpperCase()];
-      if (coingeckoId && response.data[coingeckoId]) {
-        prices[symbol] = response.data[coingeckoId].usd;
-      }
-    });
-
-    return prices;
-  } catch (error) {
-    console.error('Error fetching multiple prices from Coingecko:', error.message);
-    throw new Error('Failed to fetch multiple prices from Coingecko');
   }
-};
+
+
 
 module.exports = {
   getCurrentPrice,

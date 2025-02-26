@@ -5,6 +5,7 @@ const crypto = require('crypto');
 
 const nodemailer = require('nodemailer');
 
+const { createTask } = require('../models/UserTask');  
 
 
 exports.register = async (req, res) => {
@@ -18,7 +19,6 @@ exports.register = async (req, res) => {
     }
 
     // Hash the password
-
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -41,7 +41,11 @@ exports.register = async (req, res) => {
     user.verificationToken = verificationToken;
 
     // Save the user to the database
-    await create(user);
+    const newUser = await create(user);  // Store the newly created user object
+
+    // After user is created, create the "Make 5 Trades" challenge
+    const taskName = 'Make 5 Trades';  // Default task
+    await createTask(newUser.id, taskName);  // Assign task using newUser.id
 
     // Generate an authentication JWT
     const payload = {
