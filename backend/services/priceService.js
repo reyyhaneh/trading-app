@@ -69,7 +69,6 @@ const getCurrentPrice = async (symbol) => {
         }
       });
 
-      console.log("📉 Batch Prices Fetched:", prices);
       return prices;
     } catch (error) {
       console.error("❌ Error fetching batch prices from Coingecko:", error.message);

@@ -5,7 +5,6 @@ const TradingViewWidget = ({ selectedSymbol }) => {
   const scriptRef = useRef(null); // To track if the script has already been loaded
 
   useEffect(() => {
-    console.log("📌 TradingViewWidget Mounted - Symbol:", selectedSymbol);
 
     if (!containerRef.current) {
       console.warn("⚠️ containerRef is not ready, delaying execution.");
@@ -19,7 +18,6 @@ const TradingViewWidget = ({ selectedSymbol }) => {
     if (scriptRef.current) {
       scriptRef.current.remove();
       scriptRef.current = null;
-      console.log("🧹 Removed existing TradingView script.");
     }
 
     const script = document.createElement('script');
@@ -42,19 +40,15 @@ const TradingViewWidget = ({ selectedSymbol }) => {
       container_id: 'tradingview-widget',
     });
 
-    console.log("✅ Appending TradingView script:", script.innerHTML);
 
     // Append script only if container exists
     if (containerRef.current) {
       containerRef.current.appendChild(script);
       scriptRef.current = script; // Store reference to prevent duplicates
-      console.log("📌 TradingView script appended successfully.");
     } else {
-      console.error("❌ containerRef is null, script was NOT appended.");
     }
 
     return () => {
-      console.log("🧹 Cleaning up TradingView widget.");
       if (containerRef.current) {
         containerRef.current.innerHTML = ''; // Reset container
       }

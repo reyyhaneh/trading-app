@@ -37,7 +37,6 @@ class UserTask {
   
     // If task is completed, assign a new task dynamically
     if (updatedTask && updatedTask.completed) {
-      console.log(`🎉 Task Completed: ${updatedTask.task_name}`);
   
       const tradeCountMatch = updatedTask.task_name.match(/\d+/);
       if (tradeCountMatch) {
@@ -50,7 +49,6 @@ class UserTask {
   
         if (!duplicateTask) {
           await UserTask.createTask(userId, newTaskName);
-          console.log(`🔥 New Task Assigned: ${newTaskName}`);
         }
       }
     }

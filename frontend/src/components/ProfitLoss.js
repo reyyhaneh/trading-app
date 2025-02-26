@@ -18,14 +18,12 @@ const ProfitLoss = () => {
         return;
       }
 
-      console.log("📢 Fetching profit/loss data...");
 
       const response = await axios.get("http://localhost:5000/api/profile/pl", {
         headers: { "x-auth-token": user.token },
       });
 
       if (response.data?.profitLossResults?.length > 0) {
-        console.log("✅ Profit/Loss Data Received:", response.data.profitLossResults);
         setProfitLoss(response.data.profitLossResults);
       } else {
         setError("No trades found.");

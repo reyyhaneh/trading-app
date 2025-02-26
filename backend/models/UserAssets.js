@@ -21,7 +21,6 @@ const UserAssets = {
    * Increase asset amount for a user (or insert new if not exists).
    */
   async addOrUpdateAsset(userId, assetSymbol, amountToAdd) {
-    console.log("asset symbol:", assetSymbol)
 
     // Check if record exists
     const selectQuery = `

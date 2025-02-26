@@ -14,7 +14,6 @@ const trackTradeProgress = async (req, res, next) => {
 
     const tradeTask = tradeTasks.length > 0 ? tradeTasks[0] : null; // Get the most recent task
 
-    console.log("🎯 Latest Trade Task:", tradeTask);
 
     if (tradeTask && !tradeTask.completed) {
       // Always increment by 20% for each trade
@@ -22,7 +21,6 @@ const trackTradeProgress = async (req, res, next) => {
 
       // If the task is completed (100% progress), mark it as completed and create a new task
       if (tradeTask.progress + progressIncrease >= 100) {
-        console.log(`🎉 User ${userId} completed: ${tradeTask.task_name}`);
         
         // Mark the task as completed
         await UserTask.updateProgress(userId, tradeTask.task_name, 100);
@@ -38,12 +36,10 @@ const trackTradeProgress = async (req, res, next) => {
 
         if (!duplicateTask) {
           await UserTask.createTask(userId, newTaskName);
-          console.log(`🆕 Assigning new task: ${newTaskName}`);
         }
       } else {
         // Update task progress without marking it completed
         await UserTask.updateProgress(userId, tradeTask.task_name, tradeTask.progress + progressIncrease);
-        console.log(`📈 Progress updated for ${tradeTask.task_name}: ${tradeTask.progress + progressIncrease}%`);
       }
     }
 
