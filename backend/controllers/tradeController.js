@@ -15,7 +15,6 @@ exports.buyStock = async (req, res) => {
   const { stockSymbol, amount, price } = req.body;
 
   try {
-    // Validate input
     if (!stockSymbol || !amount || !price) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -25,15 +24,15 @@ exports.buyStock = async (req, res) => {
       return res.status(404).json({ error: 'User not found.' });
     }
 
-    // Await the balance retrieval
     const balance = await User.getBalance(req.user.id);
-    const cost = amount * price; // total cost of this buy
+
+    const cost = parseFloat((amount * price).toFixed(2));
 
     if (balance < cost) {
       return res.status(400).json({ error: 'Insufficient funds for this trade.' });
     }
 
-    const newBalance = balance - cost;
+    const newBalance = (balance - cost).toFixed(2);
     await User.updateBalance(req.user.id, newBalance);
 
     const trade = {

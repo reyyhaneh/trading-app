@@ -7,6 +7,7 @@ const TradeForm = () => {
   const [symbol, setSymbol] = useState('BTC'); // Default symbol
   const [amount, setAmount] = useState('');
   const [price, setPrice] = useState('');
+  const [totalCost, setTotalCost] = useState(''); // New state for total cost
   const [currentPrice, setCurrentPrice] = useState('');
   const [symbolsList, setSymbolsList] = useState(['BTC', 'ETH', 'DOGE']); // Available symbols
   const [loadingPrice, setLoadingPrice] = useState(false);
@@ -29,9 +30,8 @@ const TradeForm = () => {
         const fetchedPrice = await priceService.getCurrentPrice(symbol, token);
 
         setCurrentPrice(fetchedPrice);
-        setPrice(amount ? (amount * fetchedPrice).toFixed(2) : ''); // Update price only if amount is set
+        setPrice(fetchedPrice); // Only set the unit price
       } catch (error) {
-        console.error('Error fetching price:', error);
         setPriceError('Failed to fetch the current price. Please try again.');
         setCurrentPrice('');
         setPrice('');
@@ -39,7 +39,7 @@ const TradeForm = () => {
         setLoadingPrice(false);
       }
     }, 800), // Debounce time = 800ms
-  []);
+  );
 
   /** Runs once on symbol change */
   useEffect(() => {
@@ -63,27 +63,28 @@ const TradeForm = () => {
     setSymbol(newSymbol);
     setAmount('');
     setPrice('');
+    setTotalCost('');
   };
 
-  // Handles amount change with debounced price update
+  // Handles amount change and updates total cost
   const handleAmountChange = (e) => {
     const newAmount = e.target.value;
     setAmount(newAmount);
 
     if (currentPrice) {
-      const newPrice = (newAmount * currentPrice).toFixed(2);
-      setPrice(newPrice);
+      const newTotalCost = (newAmount * currentPrice).toFixed(2);
+      setTotalCost(newTotalCost); // Calculate total cost separately
     }
   };
 
-  // Handles manual price change
+  // Handles manual price change (for flexibility)
   const handlePriceChange = (e) => {
     const newPrice = e.target.value;
     setPrice(newPrice);
 
     if (currentPrice) {
-      const newAmount = (newPrice / currentPrice).toFixed(6);
-      setAmount(newAmount);
+      const newTotalCost = (amount * newPrice).toFixed(2);
+      setTotalCost(newTotalCost); // Recalculate total cost
     }
   };
 
@@ -97,14 +98,13 @@ const TradeForm = () => {
     const trade = {
       stockSymbol: symbol,
       amount: parseFloat(amount),
-      price: parseFloat(price),
+      price: parseFloat(price), // Only send the unit price
     };
 
     try {
       await tradeService.buyStock(trade);
       alert('Trade executed successfully');
     } catch (error) {
-      console.error('Trade failed', error);
       alert('Trade failed. Please try again.');
     }
   };
@@ -119,14 +119,13 @@ const TradeForm = () => {
     const trade = {
       stockSymbol: symbol,
       amount: parseFloat(amount),
-      price: parseFloat(price),
+      price: parseFloat(price), // Only send the unit price
     };
 
     try {
       await tradeService.sellStock(trade);
       alert('Trade executed successfully');
     } catch (error) {
-      console.error('Trade failed', error);
       alert('Trade failed. Please try again.');
     }
   };
@@ -154,22 +153,6 @@ const TradeForm = () => {
           </select>
         </div>
 
-        {/* Price Display */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Current Price (USD)
-          </label>
-          {loadingPrice ? (
-            <p className="text-gray-500">Loading price...</p>
-          ) : priceError ? (
-            <p className="text-red-500">{priceError}</p>
-          ) : (
-            <p className="mt-1 block w-full h-12 text-lg border border-gray-300 rounded-md shadow-sm bg-gray-100 sm:text-lg">
-              ${currentPrice.toLocaleString()}
-            </p>
-          )}
-        </div>
-
         {/* Amount Input */}
         <div>
           <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
@@ -187,21 +170,24 @@ const TradeForm = () => {
           />
         </div>
 
-        {/* Price Input */}
+        {/* Price Display */}
         <div>
-          <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-            Price
+          <label className="block text-sm font-medium text-gray-700">
+            Unit Price (USD)
           </label>
-          <input
-            type="number"
-            id="price"
-            name="price"
-            value={price}
-            onChange={handlePriceChange}
-            className="mt-1 block w-full h-12 text-lg border border-gray-300 rounded-md shadow-sm focus:ring-black focus:border-black sm:text-lg"
-            min="0.01"
-            step="0.01"
-          />
+          <p className="mt-1 block w-full h-12 text-lg border border-gray-300 rounded-md shadow-sm bg-gray-100 sm:text-lg">
+            ${price}
+          </p>
+        </div>
+
+        {/* Total Cost Display */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Total Cost (USD)
+          </label>
+          <p className="mt-1 block w-full h-12 text-lg border border-gray-300 rounded-md shadow-sm bg-gray-100 sm:text-lg">
+            ${totalCost}
+          </p>
         </div>
 
         {/* Action Buttons */}
@@ -225,6 +211,5 @@ const TradeForm = () => {
     </div>
   );
 };
-
 
 export default TradeForm;

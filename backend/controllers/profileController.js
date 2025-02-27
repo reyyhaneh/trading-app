@@ -17,6 +17,12 @@ const calculate = async (trade) => {
   }
 */
 
+// Helper function to safely format numbers
+const formatNumber = (value) => {
+  return parseFloat(value || 0).toFixed(2);
+};
+
+
 const calculateProfitLossOverTime = (trades, currentPrice) => {
   let cumulativeProfitLoss = 0;
   const profitLossData = trades.map(trade => {
@@ -42,95 +48,68 @@ const calculateProfitLossOverTime = (trades, currentPrice) => {
 exports.getProfitLoss = async (req, res) => {
   const userId = req.user.id;
 
+  console.log(`🔍 Fetching Profit/Loss for User ID: ${userId}`);
+
   try {
+    // Get user portfolio
+    const query = `
+      SELECT stock_symbol, total_amount, total_spent, total_earned, avg_cost_per_unit, profit_loss
+      FROM user_portfolio
+      WHERE user_id = $1;
+    `;
+    const { rows: portfolio } = await pool.query(query, [userId]);
 
-    // Fetch user trades
-    const trades = await Trade.getTradesByUserId(userId);
+    // Log portfolio details
+    console.log('📊 User Portfolio:', JSON.stringify(portfolio, null, 2));
 
-    if (!trades.length) {
-      return res.json({ profitLoss: 0, message: "No trades found." });
+    // If no assets, return 0
+    if (!portfolio.length) {
+      console.log('ℹ️ No assets found for this user.');
+      return res.json({ profitLoss: 0, message: "No assets found." });
     }
 
-    let assetData = {}; // Store total spent, total earned, and amount per asset
-    let assetSymbols = new Set(); // Store unique asset symbols for batch request
+    // Get symbols for price check
+    const assetSymbols = portfolio.map(item => item.stock_symbol);
+    console.log('💹 Fetching Prices for Symbols:', assetSymbols);
 
-    // Process each trade
-    for (let trade of trades) {
-      const { amount, price, type, stock_symbol } = trade;
+    // Fetch current prices
+    const prices = await priceService.getCurrentPrices(assetSymbols);
+    console.log('💰 Fetched Prices:', JSON.stringify(prices, null, 2));
 
-      if (!stock_symbol) {
-        console.warn(`⚠️ Trade with missing stock_symbol: ${JSON.stringify(trade)}`);
-        continue;
-      }
+    // Calculate profit/loss for each asset
+    const profitLossResults = portfolio.map(item => {
+      const { stock_symbol, total_amount, total_spent, total_earned, avg_cost_per_unit, profit_loss } = item;
+      const currentPrice = parseFloat(prices[stock_symbol]) || 0;
+      const currentValue = total_amount * currentPrice;
 
-      if (!assetData[stock_symbol]) {
-        assetData[stock_symbol] = {
-          totalAmount: 0,
-          totalSpent: 0,
-          totalEarned: 0,
-          profitLoss: 0,
-          avgCostPerUnit: 0,
-        };
-      }
-
-      const tradeAmount = parseFloat(amount);
-      const tradePrice = parseFloat(price);
-      const totalValue = tradeAmount * tradePrice;
-
-      // Update total spent & earned based on trade type
-      if (type === "buy") {
-        // Calculate new average cost per unit
-        const previousAmount = assetData[stock_symbol].totalAmount;
-        const previousSpent = assetData[stock_symbol].totalSpent;
-        const newAmount = previousAmount + tradeAmount;
-        const newSpent = previousSpent + totalValue;
-
-        // Update average cost per unit
-        assetData[stock_symbol].avgCostPerUnit = newSpent / newAmount;
-        assetData[stock_symbol].totalAmount = newAmount;
-        assetData[stock_symbol].totalSpent = newSpent;
-      } else if (type === "sell") {
-        // Calculate profit/loss using the average cost per unit
-        const avgCost = assetData[stock_symbol].avgCostPerUnit;
-        const costBasis = tradeAmount * avgCost;
-        const profitOrLoss = totalValue - costBasis;
-
-        // Update totals
-        assetData[stock_symbol].totalAmount -= tradeAmount;
-        assetData[stock_symbol].totalEarned += totalValue;
-        assetData[stock_symbol].profitLoss += profitOrLoss;
-      }
-
-      assetSymbols.add(stock_symbol);
-    }
-
-    const symbolsArray = Array.from(assetSymbols);
-
-    const prices = await priceService.getCurrentPrices(symbolsArray); // Fetch all prices at once!
-
-    // Now calculate profit/loss
-    const profitLossResults = [];
-    for (let assetSymbol in assetData) {
-      const { totalAmount, totalSpent, totalEarned, profitLoss, avgCostPerUnit } = assetData[assetSymbol];
-      const currentPrice = prices[assetSymbol] || 0;
-
-      // Calculate the current value of the asset
-      const currentValue = totalAmount * currentPrice;
+      console.log(`🔢 Calculating Profit/Loss for ${stock_symbol}:
+        - Total Amount: ${total_amount}
+        - Total Spent: ${total_spent}
+        - Total Earned: ${total_earned}
+        - Avg Cost Per Unit: ${avg_cost_per_unit}
+        - Profit/Loss So Far: ${profit_loss}
+        - Current Price: ${currentPrice}
+        - Current Value: ${currentValue}
+      `);
 
       // Final profit/loss calculation:
-      const totalProfitLoss = profitLoss + currentValue - totalSpent;
+      const totalProfitLoss = parseFloat(profit_loss) + currentValue - parseFloat(total_spent);
 
-      profitLossResults.push({
-        assetSymbol,
-        profitLoss: totalProfitLoss.toFixed(2),
-        totalAmount: totalAmount.toFixed(2),
-        totalSpent: totalSpent.toFixed(2),
-        totalEarned: totalEarned.toFixed(2),
-        avgCostPerUnit: avgCostPerUnit.toFixed(2),
-        currentPrice: currentPrice.toFixed(2),
-      });
-    }
+      console.log(`📈 Final Profit/Loss for ${stock_symbol}: ${totalProfitLoss}`);
 
+      return {
+        assetSymbol: stock_symbol,
+        profitLoss: formatNumber(totalProfitLoss),
+        totalAmount: formatNumber(total_amount),
+        totalSpent: formatNumber(total_spent),
+        totalEarned: formatNumber(total_earned),
+        avgCostPerUnit: formatNumber(avg_cost_per_unit),
+        currentPrice: formatNumber(currentPrice),
+      };
+      
+    });
+
+    console.log('✅ Final Profit/Loss Results:', JSON.stringify(profitLossResults, null, 2));
 
     res.json({ profitLossResults });
   } catch (err) {
@@ -138,7 +117,6 @@ exports.getProfitLoss = async (req, res) => {
     res.status(500).send("Server error");
   }
 };
-
 
 
 exports.getProfitLossChart = async (req, res) => {
