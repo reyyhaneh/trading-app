@@ -1,11 +1,6 @@
 const pool = require('../config/db');
 
 const User = {
-  /**
-   * Finds a user by email.
-   * @param {string} email - The email of the user to find.
-   * @returns {Object|null} - The user object if found, otherwise null.
-   */
   async findByEmail(email) {
     try {
       const query = 'SELECT * FROM users WHERE email = $1';
@@ -40,15 +35,6 @@ const User = {
     }
   },
 
-  /**
-   * Creates a new user in the database.
-   * @param {Object} user - The user details.
-   * @param {string} user.username - The username of the user.
-   * @param {string} user.email - The email of the user.
-   * @param {string} user.password - The hashed password of the user.
-   * @param {string} user.verificationToken - The email verification token.
-   * @returns {Object} - The newly created user.
-   */
   async create(user) {
     try {
       const { username, email, password, verificationToken } = user;

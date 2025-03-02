@@ -5,7 +5,7 @@ const axios = require('axios');
 const User = require('../models/User'); // ✅ Import User model
 const pool = require('../config/db'); // ✅ Ensure database connection is imported
 
-
+const UserPortfolio = require('../models/UserPortfolio');
 
 /*
 Implement a calculator function 
@@ -47,26 +47,12 @@ const calculateProfitLossOverTime = (trades, currentPrice) => {
 // Calculate profit/loss using average cost
 exports.getProfitLoss = async (req, res) => {
   const userId = req.user.id;
-
-  console.log(`🔍 Fetching Profit/Loss for User ID: ${userId}`);
-
   try {
     // Get user portfolio
-    const query = `
-      SELECT stock_symbol, total_amount, total_spent, total_earned, avg_cost_per_unit, profit_loss
-      FROM user_portfolio
-      WHERE user_id = $1;
-    `;
-    const { rows: portfolio } = await pool.query(query, [userId]);
+    const portfolio  = await UserPortfolio.getPortfolio(req.user.id)
 
     // Log portfolio details
     console.log('📊 User Portfolio:', JSON.stringify(portfolio, null, 2));
-
-    // If no assets, return 0
-    if (!portfolio.length) {
-      console.log('ℹ️ No assets found for this user.');
-      return res.json({ profitLoss: 0, message: "No assets found." });
-    }
 
     // Get symbols for price check
     const assetSymbols = portfolio.map(item => item.stock_symbol);

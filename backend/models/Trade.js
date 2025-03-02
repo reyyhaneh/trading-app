@@ -32,6 +32,11 @@ const Trade = {
         profitLoss: 0,
         avgCostPerUnit: 0,
       };
+      portfolio.totalAmount = parseFloat(portfolio.totalAmount) || 0;
+      portfolio.totalSpent = parseFloat(portfolio.totalSpent) || 0;
+      portfolio.totalEarned = parseFloat(portfolio.totalEarned) || 0;
+      portfolio.profitLoss = parseFloat(portfolio.profitLoss) || 0;
+      portfolio.avgCostPerUnit = parseFloat(portfolio.avgCostPerUnit) || 0;
   
       let profitLoss = 0;
       if (type.toLowerCase() === 'buy') {

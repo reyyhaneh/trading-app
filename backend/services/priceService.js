@@ -18,7 +18,7 @@ const coingeckoSymbolMapping = {
 
 
 };
-const COINGECKO_IDS = {
+const symbolToCoinGeckoId = {
   BTC: "bitcoin",
   ETH: "ethereum",
   DOGE: "dogecoin",
@@ -49,32 +49,44 @@ const getCurrentPrice = async (symbol) => {
   }
 };
 
+const getCurrentPrices = async (symbols) => {
+  try {
+    // Convert symbols to CoinGecko's expected IDs
+    const coinGeckoIds = symbols
+      .map((sym) => symbolToCoinGeckoId[sym.toUpperCase()])
+      .filter((id) => id !== undefined); // Remove undefined mappings
 
-  const getCurrentPrices = async (symbols) => {
-    try {
-      const symbolsQuery = symbols.map((sym) => sym.toLowerCase()).join(",");
-
-      const response = await axios.get(COINGECKO_API_BASE_URL, {
-        params: {
-          ids: symbolsQuery, // Pass multiple symbols
-          vs_currencies: "usd",
-        },
-      });
-
-      const prices = {};
-      symbols.forEach((symbol) => {
-        const lowerSymbol = symbol.toLowerCase();
-        if (response.data[lowerSymbol]) {
-          prices[symbol] = response.data[lowerSymbol].usd;
-        }
-      });
-
-      return prices;
-    } catch (error) {
-      console.error("❌ Error fetching batch prices from Coingecko:", error.message);
-      throw new Error("Failed to fetch batch prices from Coingecko");
+    if (coinGeckoIds.length === 0) {
+      throw new Error("No valid CoinGecko IDs found for requested symbols.");
     }
+
+    console.log("📡 Requesting prices for:", coinGeckoIds);
+
+    // Fetch prices from CoinGecko
+    const response = await axios.get(COINGECKO_API_BASE_URL, {
+      params: {
+        ids: coinGeckoIds.join(","), // Pass mapped CoinGecko IDs
+        vs_currencies: "usd",
+      },
+    });
+
+    console.log("📥 Raw API Response:", JSON.stringify(response.data, null, 2));
+
+    // Build price response ensuring all symbols are included
+    const prices = {};
+    symbols.forEach((symbol) => {
+      const coinGeckoId = symbolToCoinGeckoId[symbol.toUpperCase()];
+      prices[symbol] = response.data[coinGeckoId]?.usd ?? null; // Return null if missing
+    });
+
+    console.log("✅ Final Price Mapping:", JSON.stringify(prices, null, 2));
+
+    return prices;
+  } catch (error) {
+    console.error("❌ Error fetching batch prices from Coingecko:", error.message);
+    return {}; 
   }
+};
 
 
 

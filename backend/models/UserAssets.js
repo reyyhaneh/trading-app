@@ -1,11 +1,7 @@
 const pool = require('../config/db');
 
 const UserAssets = {
-  /**
-   * Get all assets for a user.
-   * @param {number} userId
-   * @returns {Array} - List of user assets.
-   */
+
   async getAssetsByUserId(userId) {
     const query = `
       SELECT ua.asset_symbol, a.name, ua.amount
@@ -79,7 +75,18 @@ const UserAssets = {
       `;
       await pool.query(updateQuery, [newAmount, result.rows[0].id]);
     }
-  }
+  },
+  async getAssetAmount(userId, assetSymbol) {
+    const query = `
+        SELECT amount 
+        FROM user_assets 
+        WHERE user_id = $1 AND asset_symbol = $2
+    `;
+
+    const result = await pool.query(query, [userId, assetSymbol]);
+    return result.rows.length > 0 ? result.rows[0].amount : 0;
+}
+
 };
 
 module.exports = UserAssets;

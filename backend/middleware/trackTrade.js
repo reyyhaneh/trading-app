@@ -1,10 +1,12 @@
 const UserTask = require('../models/UserTask');
 const User = require('../models/User'); // Ensure this model allows fetching the user's balance.
+const UserAssets = require('../models/UserAssets');
 
-const trackTradeProgress = async (req, res, next) => {
+const trackTrade = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { stockSymbol, amount, price } = req.body;
+    
+    const { stockSymbol, amount, price, type } = req.body;
 
     // Ensure all required trade data is provided
     if (!stockSymbol || !amount || !price) {
@@ -12,22 +14,38 @@ const trackTradeProgress = async (req, res, next) => {
     }
 
     // Retrieve user balance
-    const balance = await User.getBalance(userId);
-    if (balance === null || balance === undefined) {
-      return res.status(500).json({ error: 'Could not retrieve user balance.' });
+
+
+    if (type == 'buy') {
+      const balance = await User.getBalance(userId);
+      if (balance === null || balance === undefined) {
+        return res.status(500).json({ error: 'Could not retrieve user balance.' });
+      }
+      const totalCost = parseFloat((amount * price).toFixed(2));
+      if (balance < totalCost) {
+        console.log('❌ Insufficient Funds:', { balance, totalCost });
+        return res.status(400).json({ error: 'Insufficient funds for this trade.' });
+      }
     }
 
-    // Calculate the total cost of the trade
-    const totalCost = parseFloat((amount * price).toFixed(2));
+    if (type == 'sell'){
+      const userAssetAmount = await UserAssets.getAssetAmount(userId, stockSymbol);
+      if (userAssetAmount === null ||  userAssetAmount === undefined) {
+        return res.status(500).json({ error: `Could not retrieve asset ${stockSymbol} for user.` });
+      }
+      if (amount > userAssetAmount) {
+        console.log('❌ Insufficient Assets to Sell:', { userAssetAmount, amount })
+        return res.status(400).json({ error: `not enough ${stockSymbol} to sell.` });
 
-    console.log(`💰 Checking balance for user ${userId}: ${balance}`);
-    console.log(`🛒 Trade Cost: ${totalCost}`);
+      }
+    }
+
+    
+
+  
 
     // If the user does not have enough funds, return an error
-    if (balance < totalCost) {
-      console.log('❌ Insufficient Funds:', { balance, totalCost });
-      return res.status(400).json({ error: 'Insufficient funds for this trade.' });
-    }
+
 
     // Get user tasks
     const tasks = await UserTask.getUserTasks(userId);
@@ -67,4 +85,4 @@ const trackTradeProgress = async (req, res, next) => {
 };
 
 // In progress.js
-module.exports = { trackTradeProgress };
+module.exports = { trackTrade };
