@@ -46,7 +46,6 @@ const calculateProfitLossOverTime = (trades, currentPrice) => {
 };
 // Calculate profit/loss using average cost
 exports.getProfitLoss = async (req, res) => {
-  const userId = req.user.id;
   try {
     // Get user portfolio
     const portfolio  = await UserPortfolio.getPortfolio(req.user.id)
@@ -64,36 +63,34 @@ exports.getProfitLoss = async (req, res) => {
 
     // Calculate profit/loss for each asset
     const profitLossResults = portfolio.map(item => {
-      const { stock_symbol, total_amount, total_spent, total_earned, avg_cost_per_unit, profit_loss } = item;
+      const {
+        stock_symbol, total_amount, total_spent, total_earned,
+        avg_cost_per_unit, profit_loss
+      } = item;
+    
+      const safeTotalAmount = !isNaN(parseFloat(total_amount)) ? parseFloat(total_amount) : 0;
+      const safeTotalSpent = !isNaN(parseFloat(total_spent)) ? parseFloat(total_spent) : 0;
+      const safeTotalEarned = !isNaN(parseFloat(total_earned)) ? parseFloat(total_earned) : 0;
+      const safeAvgCostPerUnit = !isNaN(parseFloat(avg_cost_per_unit)) ? parseFloat(avg_cost_per_unit) : 0;
+      const safeProfitLoss = !isNaN(parseFloat(profit_loss)) ? parseFloat(profit_loss) : 0;
+
       const currentPrice = parseFloat(prices[stock_symbol]) || 0;
-      const currentValue = total_amount * currentPrice;
+      const currentValue = safeTotalAmount * currentPrice;
 
-      console.log(`🔢 Calculating Profit/Loss for ${stock_symbol}:
-        - Total Amount: ${total_amount}
-        - Total Spent: ${total_spent}
-        - Total Earned: ${total_earned}
-        - Avg Cost Per Unit: ${avg_cost_per_unit}
-        - Profit/Loss So Far: ${profit_loss}
-        - Current Price: ${currentPrice}
-        - Current Value: ${currentValue}
-      `);
-
-      // Final profit/loss calculation:
-      const totalProfitLoss = parseFloat(profit_loss) + currentValue - parseFloat(total_spent);
-
-      console.log(`📈 Final Profit/Loss for ${stock_symbol}: ${totalProfitLoss}`);
-
+      console.log(`🔢 Debug: Calculating Profit/Loss for ${stock_symbol}`);
+      console.log({ safeTotalAmount, safeTotalSpent, safeTotalEarned, safeAvgCostPerUnit, safeProfitLoss });
+    
       return {
         assetSymbol: stock_symbol,
-        profitLoss: formatNumber(totalProfitLoss),
-        totalAmount: formatNumber(total_amount),
-        totalSpent: formatNumber(total_spent),
-        totalEarned: formatNumber(total_earned),
-        avgCostPerUnit: formatNumber(avg_cost_per_unit),
-        currentPrice: formatNumber(currentPrice),
+        profitLoss: safeProfitLoss.toFixed(2),
+        totalAmount: safeTotalAmount.toFixed(2),
+        totalSpent: safeTotalSpent.toFixed(2),
+        totalEarned: safeTotalEarned.toFixed(2),
+        avgCostPerUnit: safeAvgCostPerUnit.toFixed(2),
+        currentPrice: currentPrice.toFixed(2),
       };
-      
     });
+    
 
     console.log('✅ Final Profit/Loss Results:', JSON.stringify(profitLossResults, null, 2));
 

@@ -21,24 +21,34 @@ const trackTrade = async (req, res, next) => {
       if (balance === null || balance === undefined) {
         return res.status(500).json({ error: 'Could not retrieve user balance.' });
       }
-      const totalCost = parseFloat((amount * price).toFixed(2));
+      const totalCost = parseFloat((amount * price).toFixed(8));
       if (balance < totalCost) {
         console.log('❌ Insufficient Funds:', { balance, totalCost });
         return res.status(400).json({ error: 'Insufficient funds for this trade.' });
       }
     }
-
-    if (type == 'sell'){
+    if (type === 'sell') {
       const userAssetAmount = await UserAssets.getAssetAmount(userId, stockSymbol);
-      if (userAssetAmount === null ||  userAssetAmount === undefined) {
+      console.log(`🔍 RAW userAssetAmount from DB:`, userAssetAmount);
+    
+      if (userAssetAmount === null || userAssetAmount === undefined) {
         return res.status(500).json({ error: `Could not retrieve asset ${stockSymbol} for user.` });
       }
-      if (amount > userAssetAmount) {
-        console.log('❌ Insufficient Assets to Sell:', { userAssetAmount, amount })
-        return res.status(400).json({ error: `not enough ${stockSymbol} to sell.` });
-
+      const requestedAmount = parseFloat(amount); // Ensure number
+      const availableAmount = parseFloat(userAssetAmount); // Ensure number
+      
+      console.log(`🔍 user has: ${availableAmount} (${typeof availableAmount}) ${stockSymbol}s`);
+      console.log(`🔍 user wants to sell: ${requestedAmount} (${typeof requestedAmount}) ${stockSymbol}s`);
+      
+      if (requestedAmount > availableAmount) {
+        console.log('🔴 DEBUG: Amount Check Failed');
+        console.log(`❌ Insufficient Assets to Sell: user has ${availableAmount}, wants to sell ${requestedAmount}`);
+        return res.status(400).json({ error: `Not enough ${stockSymbol} to sell.` });
+      } else {
+        console.log(`✅ Passed: user has enough ${stockSymbol} to sell.`);
       }
     }
+    
 
     
 

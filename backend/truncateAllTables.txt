@@ -1,0 +1,1 @@
+TRUNCATE TABLE user_assets, user_tasks, user_portfolio, trades, users RESTART IDENTITY CASCADE;

@@ -29,8 +29,8 @@ const TradeForm = () => {
         const { token } = user;
         const fetchedPrice = await priceService.getCurrentPrice(symbol, token);
 
-        setCurrentPrice(fetchedPrice);
-        setPrice(fetchedPrice); // Only set the unit price
+        setCurrentPrice(parseFloat(fetchedPrice).toFixed(8)); // Ensure 8 decimal places
+        setPrice(parseFloat(fetchedPrice).toFixed(8)); // Ensure unit price is float(8)
       } catch (error) {
         setPriceError('Failed to fetch the current price. Please try again.');
         setCurrentPrice('');
@@ -57,6 +57,13 @@ const TradeForm = () => {
     return () => clearInterval(interval); // Cleanup interval on unmount
   }, [symbol]);
 
+  useEffect(() => {
+    if (amount && price) {
+      setTotalCost((parseFloat(amount) * parseFloat(price)).toFixed(8)); // Float(8) precision
+    }
+  }, [amount, price]); // Recalculate total cost when amount or price changes
+
+
   // Handles symbol change
   const handleSymbolChange = (e) => {
     const newSymbol = e.target.value;
@@ -75,15 +82,16 @@ const TradeForm = () => {
       const newTotalCost = (newAmount * currentPrice).toFixed(2);
       setTotalCost(newTotalCost); // Calculate total cost separately
     }
-  };
+};
+
 
   // Handles manual price change (for flexibility)
   const handlePriceChange = (e) => {
-    const newPrice = e.target.value;
+    const newPrice = parseFloat(e.target.value).toFixed(8);
     setPrice(newPrice);
 
     if (currentPrice) {
-      const newTotalCost = (amount * newPrice).toFixed(2);
+      const newTotalCost = parseFloat(amount * newPrice).toFixed(2);
       setTotalCost(newTotalCost); // Recalculate total cost
     }
   };
@@ -97,8 +105,9 @@ const TradeForm = () => {
 
     const trade = {
       stockSymbol: symbol,
-      amount: parseFloat(amount),
-      price: parseFloat(price), // Only send the unit price
+      amount: parseFloat(amount).toFixed(8), // Ensure float(8)
+      price: parseFloat(price).toFixed(8), // Ensure float(8)
+      type: 'buy',
     };
 
     try {
@@ -118,8 +127,9 @@ const TradeForm = () => {
 
     const trade = {
       stockSymbol: symbol,
-      amount: parseFloat(amount),
-      price: parseFloat(price), // Only send the unit price
+      amount: parseFloat(amount).toFixed(8), // Ensure float(8)
+      price: parseFloat(price).toFixed(8), // Ensure float(8)
+      type: 'sell', 
     };
 
     try {

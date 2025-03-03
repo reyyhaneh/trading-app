@@ -24,15 +24,19 @@ exports.buyStock = async (req, res) => {
       return res.status(404).json({ error: 'User not found.' });
     }
 
-    const balance = await User.getBalance(req.user.id);
+    const balance = parseFloat(await User.getBalance(req.user.id)); // Ensure Float(8)
 
-    const cost = parseFloat((amount * price).toFixed(2));
+    const cost = parseFloat((amount * price).toFixed(8)); // Ensure Float(8)
 
     if (balance < cost) {
       return res.status(400).json({ error: 'Insufficient funds for this trade.' });
     }
 
-    const newBalance = (balance - cost).toFixed(2);
+    const newBalance = (balance - cost).toFixed(8); // Ensure Float(8)
+    console.log(`
+      newBalance: ${newBalance},
+      cost: ${cost}
+      `);
     await User.updateBalance(req.user.id, newBalance);
 
     const trade = {
@@ -43,15 +47,15 @@ exports.buyStock = async (req, res) => {
       price,
       date: new Date().toISOString(),
     };
+    console.log('trade:', trade)
 
     const savedTrade = await Trade.addTrade(trade);
+    console.log("trade saved")
 
     await UserAssets.addOrUpdateAsset(req.user.id, stockSymbol, amount);
 
-
     const scoreChange = calculateScore('buy', amount, price);
     await updateScore(req.user.id, scoreChange, 'Executed a buy trade');
-
     res.status(201).json({ msg: 'Buy trade recorded successfully', trade: savedTrade, newBalance });
   } catch (err) {
     console.error('Error recording buy trade:', err.message || err);

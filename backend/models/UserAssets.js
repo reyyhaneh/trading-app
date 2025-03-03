@@ -17,6 +17,10 @@ const UserAssets = {
    * Increase asset amount for a user (or insert new if not exists).
    */
   async addOrUpdateAsset(userId, assetSymbol, amountToAdd) {
+    console.log(`
+      amount to add: ${amountToAdd}
+      
+      `)
 
     // Check if record exists
     const selectQuery = `
@@ -24,10 +28,11 @@ const UserAssets = {
       WHERE user_id = $1 AND asset_symbol = $2
     `;
     const result = await pool.query(selectQuery, [userId, assetSymbol]);
+    console.log("query result: ", result)
 
     if (result.rows.length > 0) {
       // Update existing record
-      const newAmount = parseFloat(result.rows[0].amount) + amountToAdd;
+      const newAmount = (parseFloat(result.rows[0].amount) + parseFloat(amountToAdd)).toFixed(8);
       const updateQuery = `
         UPDATE user_assets
         SET amount = $1, updated_at = NOW()

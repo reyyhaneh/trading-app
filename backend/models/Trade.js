@@ -1,11 +1,11 @@
 const pool = require('../config/db');
+const UserPortfolio = require('./UserPortfolio');
 
-const Trade = {
-
-  async addTrade(trade) {
+class Trade {
+  static async addTrade(trade) {
     try {
       const { userId, type, stockSymbol, amount, price, date } = trade;
-  
+
       // Validate inputs
       if (!userId || !type || !stockSymbol || !amount || !price) {
         throw new Error('Missing required fields for adding a trade.');
@@ -13,83 +13,53 @@ const Trade = {
       if (!['buy', 'sell'].includes(type.toLowerCase())) {
         throw new Error("Trade type must be 'buy' or 'sell'.");
       }
-  
+
       const tradeAmount = parseFloat(amount);
       const tradePrice = parseFloat(price);
       const totalValue = tradeAmount * tradePrice;
-  
-      // Get the current portfolio data for this asset
-      const query = `
-        SELECT * FROM user_portfolio
-        WHERE user_id = $1 AND stock_symbol = $2;
-      `;
-      const values = [userId, stockSymbol.toUpperCase()];
-      const result = await pool.query(query, values);
-      const portfolio = result.rows[0] || {
-        totalAmount: 0,
-        totalSpent: 0,
-        totalEarned: 0,
-        profitLoss: 0,
-        avgCostPerUnit: 0,
-      };
-      portfolio.totalAmount = parseFloat(portfolio.totalAmount) || 0;
-      portfolio.totalSpent = parseFloat(portfolio.totalSpent) || 0;
-      portfolio.totalEarned = parseFloat(portfolio.totalEarned) || 0;
-      portfolio.profitLoss = parseFloat(portfolio.profitLoss) || 0;
-      portfolio.avgCostPerUnit = parseFloat(portfolio.avgCostPerUnit) || 0;
-  
+
+      // Fetch user's portfolio for this stock
+      let portfolio = await UserPortfolio.getPortfolioBySymbol(userId, stockSymbol);
+
+      if (!portfolio) {
+        portfolio = {
+          totalAmount: 0,
+          totalSpent: 0,
+          totalEarned: 0,
+          profitLoss: 0,
+          avgCostPerUnit: 0,
+        };
+      }
+
       let profitLoss = 0;
+
       if (type.toLowerCase() === 'buy') {
-        // Calculate new average cost per unit
-        const newAmount = portfolio.totalAmount + tradeAmount;
-        const newSpent = portfolio.totalSpent + totalValue;
-  
-        portfolio.avgCostPerUnit = newSpent / newAmount;
-        portfolio.totalAmount = newAmount;
-        portfolio.totalSpent = newSpent;
-  
-        profitLoss = 0; // No realized profit or loss on buy
-      } else if (type.toLowerCase() === 'sell') {
+        // **BUY: Update portfolio (Add Amount & Cost)**
+        const newTotalAmount = portfolio.totalAmount + tradeAmount;
+        const newTotalSpent = portfolio.totalSpent + totalValue;
+        const newAvgCost = newTotalSpent / newTotalAmount;
+
+        await UserPortfolio.updatePortfolio(userId, stockSymbol, newTotalAmount, newTotalSpent, newAvgCost);
+      } 
+      else if (type.toLowerCase() === 'sell') {
+        // **SELL: Ensure user has enough assets**
         if (tradeAmount > portfolio.totalAmount) {
           throw new Error('Insufficient assets to sell.');
         }
-  
+
         // Calculate profit/loss using the average cost per unit
-        const avgCost = portfolio.avgCostPerUnit;
-        const costBasis = tradeAmount * avgCost;
+        const costBasis = tradeAmount * portfolio.avgCostPerUnit;
         profitLoss = totalValue - costBasis;
-  
+
         // Update portfolio after sale
-        portfolio.totalAmount -= tradeAmount;
-        portfolio.totalEarned += totalValue;
-        portfolio.profitLoss += profitLoss;
+        const newTotalAmount = portfolio.totalAmount - tradeAmount;
+        const newTotalEarned = portfolio.totalEarned + totalValue;
+        const newProfitLoss = portfolio.profitLoss + profitLoss;
+
+        await UserPortfolio.updatePortfolioAfterSell(userId, stockSymbol, newTotalAmount, newTotalEarned, newProfitLoss);
       }
-  
-      // Update user portfolio
-      const updateQuery = `
-        INSERT INTO user_portfolio (user_id, stock_symbol, total_amount, total_spent, total_earned, avg_cost_per_unit, profit_loss)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        ON CONFLICT (user_id, stock_symbol)
-        DO UPDATE SET 
-          total_amount = EXCLUDED.total_amount,
-          total_spent = EXCLUDED.total_spent,
-          total_earned = EXCLUDED.total_earned,
-          avg_cost_per_unit = EXCLUDED.avg_cost_per_unit,
-          profit_loss = EXCLUDED.profit_loss,
-          updated_at = NOW();
-      `;
-      const updateValues = [
-        userId,
-        stockSymbol.toUpperCase(),
-        portfolio.totalAmount,
-        portfolio.totalSpent,
-        portfolio.totalEarned,
-        portfolio.avgCostPerUnit,
-        portfolio.profitLoss,
-      ];
-      await pool.query(updateQuery, updateValues);
-  
-      // Insert the trade
+
+      // **INSERT the Trade into the trades table**
       const insertQuery = `
         INSERT INTO trades (user_id, date, profit_loss, stock_symbol, type, amount, price)
         VALUES ($1, COALESCE($2, CURRENT_TIMESTAMP), $3, $4, $5, $6, $7)
@@ -97,16 +67,16 @@ const Trade = {
       `;
       const insertValues = [userId, date, profitLoss, stockSymbol.toUpperCase(), type.toLowerCase(), amount, price];
       const tradeResult = await pool.query(insertQuery, insertValues);
-  
+
       return tradeResult.rows[0];
+
     } catch (error) {
       console.error('Error adding trade:', error.message || error);
       throw error;
     }
-  },
-  
+  }
 
-  async getTradesByUserId(userId) {
+  static async getTradesByUserId(userId) {
     try {
       if (!userId) {
         throw new Error('User ID is required to fetch trades.');
@@ -123,7 +93,7 @@ const Trade = {
       console.error('Error fetching trades:', error.message || error);
       throw error;
     }
-  },
-};
+  }
+}
 
 module.exports = Trade;
