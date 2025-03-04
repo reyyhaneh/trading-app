@@ -35,9 +35,15 @@ class Trade {
 
       if (type.toLowerCase() === 'buy') {
         // **BUY: Update portfolio (Add Amount & Cost)**
+        console.log("portfolio: ", portfolio)
         const newTotalAmount = portfolio.totalAmount + tradeAmount;
         const newTotalSpent = portfolio.totalSpent + totalValue;
         const newAvgCost = newTotalSpent / newTotalAmount;
+        console.log(`
+          - new total amount: ${newTotalAmount}
+          - new total earned; ${newTotalSpent}
+          - new average cost: ${newAvgCost}
+          `)
 
         await UserPortfolio.updatePortfolio(userId, stockSymbol, newTotalAmount, newTotalSpent, newAvgCost);
       } 
@@ -55,6 +61,11 @@ class Trade {
         const newTotalAmount = portfolio.totalAmount - tradeAmount;
         const newTotalEarned = portfolio.totalEarned + totalValue;
         const newProfitLoss = portfolio.profitLoss + profitLoss;
+        console.log(`
+          - new total amount: ${newTotalAmount}
+          - new total earned; ${newTotalEarned}
+          - new profit loss: ${newProfitLoss}
+          `)
 
         await UserPortfolio.updatePortfolioAfterSell(userId, stockSymbol, newTotalAmount, newTotalEarned, newProfitLoss);
       }

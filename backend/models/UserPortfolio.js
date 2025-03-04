@@ -14,14 +14,23 @@ class UserPortfolio {
 
   static async getPortfolioBySymbol(userId, stockSymbol) {
     try {
-      const query = 'SELECT * FROM user_portfolio WHERE user_id = $1 AND stock_symbol = $2';
-      const { rows } = await pool.query(query, [userId, stockSymbol]);
-      return rows[0] || null;
+        const query = `
+          SELECT 
+            COALESCE(total_amount, 0) AS total_amount,
+            COALESCE(total_spent, 0) AS total_spent,
+            COALESCE(total_earned, 0) AS total_earned,
+            COALESCE(avg_cost_per_unit, 0) AS avg_cost_per_unit,
+            COALESCE(profit_loss, 0) AS profit_loss
+          FROM user_portfolio WHERE user_id = $1 AND stock_symbol = $2;
+        `;
+        const { rows } = await pool.query(query, [userId, stockSymbol]);
+        return rows[0] || null;
     } catch (error) {
-      console.error(`Error fetching portfolio for ${stockSymbol}:`, error.message || error);
-      throw error;
+        console.error(`Error fetching portfolio for ${stockSymbol}:`, error.message || error);
+        throw error;
     }
-  }
+}
+
 
   static async createPortfolio(userId, stockSymbol, totalAmount, totalSpent, avgCostPerUnit) {
     try {

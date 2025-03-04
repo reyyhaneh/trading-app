@@ -11,52 +11,35 @@ const calculateScore = (type, amount, price) => {
   return type === 'buy' ? baseScore : baseScore * 1.5; // Selling gets 50% extra points
 };
 // Buy Stock
-exports.buyStock = async (req, res) => {
-  const { stockSymbol, amount, price } = req.body;
-
+exports.buyStock = async (req, res, next) => {
+  console.log("in buystock")
   try {
-    if (!stockSymbol || !amount || !price) {
+    const { userId, stockSymbol, parsedAmount, parsedPrice, cost, balance } = res.locals.tradeData;
+
+    if (!stockSymbol || !parsedAmount || !parsedPrice) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found.' });
-    }
-
-    const balance = parseFloat(await User.getBalance(req.user.id)); // Ensure Float(8)
-
-    const cost = parseFloat((amount * price).toFixed(8)); // Ensure Float(8)
-
-    if (balance < cost) {
-      return res.status(400).json({ error: 'Insufficient funds for this trade.' });
-    }
-
-    const newBalance = (balance - cost).toFixed(8); // Ensure Float(8)
-    console.log(`
-      newBalance: ${newBalance},
-      cost: ${cost}
-      `);
-    await User.updateBalance(req.user.id, newBalance);
+    const newBalance = (balance - cost).toFixed(8);
+    console.log(newBalance)
+    await User.updateBalance(userId, newBalance); // Deduct cost from balance
+    console.log("balance updated")
 
     const trade = {
       userId: req.user.id,
       type: 'buy',
       stockSymbol,
-      amount,
-      price,
+      amount:parsedAmount,
+      price:parsedPrice,
       date: new Date().toISOString(),
     };
-    console.log('trade:', trade)
 
-    const savedTrade = await Trade.addTrade(trade);
-    console.log("trade saved")
+    await UserAssets.addOrUpdateAsset(userId, stockSymbol, parsedAmount);
+    console.log("assets updated.")
 
-    await UserAssets.addOrUpdateAsset(req.user.id, stockSymbol, amount);
-
-    const scoreChange = calculateScore('buy', amount, price);
-    await updateScore(req.user.id, scoreChange, 'Executed a buy trade');
-    res.status(201).json({ msg: 'Buy trade recorded successfully', trade: savedTrade, newBalance });
+    res.locals.trade = trade; // Pass trade data to next middleware
+    console.log("next")
+    next();
   } catch (err) {
     console.error('Error recording buy trade:', err.message || err);
     res.status(500).json({ error: 'Failed to record buy trade. Please try again later.' });
@@ -72,17 +55,18 @@ exports.sellStock = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found.' });
-    }
+    const balance = parseFloat(await User.getBalance(req.user.id)); // Ensure Float(8)
 
-    // Await the balance retrieval
-    const balance = await User.getBalance(req.user.id);
-    const proceeds = amount * price; 
+    const proceeds = parseFloat((amount * price).toFixed(8));
 
-    const newBalance = Number(balance) + proceeds; 
+    const newBalance = (balance + proceeds).toFixed(8);
+    console.log(`
+      - balance: ${balance}
+      - proceeds: ${proceeds}
+      - new balance (balance + proceeds): ${newBalance}
+      `)
     await User.updateBalance(req.user.id, newBalance);
+    console.log("balance updated")
 
     const trade = {
       userId: req.user.id,
@@ -92,10 +76,13 @@ exports.sellStock = async (req, res) => {
       price,
       date: new Date().toISOString(),
     };
+    console.log("sell trade: ", trade)
 
     const savedTrade = await Trade.addTrade(trade);
+    console.log("sell trade saved")
     await UserAssets.reduceAsset(req.user.id, stockSymbol, amount);
-
+    console.log("asset reduced.")
+    
 
     const scoreChange = calculateScore('sell', amount, price);
     await updateScore(req.user.id, scoreChange, 'Executed a sell trade');

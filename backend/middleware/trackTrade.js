@@ -1,6 +1,7 @@
 const UserTask = require('../models/UserTask');
 const User = require('../models/User'); // Ensure this model allows fetching the user's balance.
 const UserAssets = require('../models/UserAssets');
+const UserPortfolio = require('../models/UserPortfolio');
 
 const trackTrade = async (req, res, next) => {
   try {
@@ -93,6 +94,83 @@ const trackTrade = async (req, res, next) => {
     res.status(500).json({ error: 'Failed to track trade progress. Please try again later.' });
   }
 };
-
+const afterBuyStock = async(req, res) => {
+  console.log("hello this is after buystock.")
+}
 // In progress.js
-module.exports = { trackTrade };
+
+const preTradeCheck = async (req, res, next) => {
+  try {
+    const { stockSymbol, amount, price, type } = req.body;
+    const userId = req.user.id;
+
+    if (!stockSymbol || !amount || !price || !type) {
+      return res.status(400).json({ error: 'Missing required trade fields.' });
+    }
+
+    const parsedAmount = parseFloat(amount);
+    const parsedPrice = parseFloat(price).toFixed(8);
+
+    if (isNaN(parsedAmount) || parsedAmount <= 0 || isNaN(parsedPrice) || parsedPrice <= 0) {
+      return res.status(400).json({ error: 'Invalid amount or price.' });
+    }
+
+    const cost = parseFloat((amount * price).toFixed(8));
+
+    const balance = parseFloat(await User.getBalance(req.user.id)); // Ensure Float(8)
+
+    if (type === 'buy') {
+
+      if (balance < cost) {
+        console.alert("Insufficient funds!")
+        return res.status(400).json({ error: 'Insufficient funds to buy this stock.' });
+      }
+    } else if (type === 'sell') {
+      const userAssetAmount = await UserAssets.getAssetAmount(userId, stockSymbol);
+      console.log("user asset amount: ", userAssetAmount)
+      if (userAssetAmount < parsedAmount) {
+        return res.status(400).json({ error: `Not enough ${stockSymbol} to sell.` });
+      }
+    }
+
+    res.locals.tradeData = { userId, stockSymbol, parsedAmount, parsedPrice, cost, balance, type };
+    next(); 
+  } catch (error) {
+    console.error('❌ Error in preTradeCheck:', error.message);
+    res.status(500).json({ error: 'Trade validation failed. Try again later.' });
+  }
+};
+
+const postTradeUpdate = async (req, res) => {
+  console.log("in postTradeUpdate")
+  try {
+    const { userId, stockSymbol, parsedAmount, parsedPrice, cost, type } = res.locals.tradeData;
+    const trade = res.locals.trade;
+
+    let portfolio = await UserPortfolio.getPortfolioBySymbol(userId, stockSymbol);
+    console.log("portfolio: ", portfolio)
+
+    if (type === 'buy') {
+      if (portfolio) {
+        const newTotalAmount = portfolio.total_amount + parsedAmount;
+        const newTotalSpent = portfolio.total_spent + cost;
+        const newAvgCost = newTotalSpent / newTotalAmount;
+        await UserPortfolio.updatePortfolio(userId, stockSymbol, newTotalAmount, newTotalSpent, newAvgCost);
+      } else {
+        await UserPortfolio.createPortfolio(userId, stockSymbol, parsedAmount, cost, parsedPrice);
+      }
+    } else if (type === 'sell') {
+      const newTotalAmount = portfolio.total_amount - parsedAmount;
+      const newTotalEarned = portfolio.total_earned + cost;
+      const newProfitLoss = portfolio.profit_loss + (cost - parsedAmount * portfolio.avg_cost_per_unit);
+      await UserPortfolio.updatePortfolioAfterSell(userId, stockSymbol, newTotalAmount, newTotalEarned, newProfitLoss);
+    }
+
+    res.status(201).json({ msg: 'Trade completed successfully', trade });
+  } catch (error) {
+    console.error('❌ Error updating portfolio:', error.message);
+    res.status(500).json({ error: 'Trade executed, but post-processing failed.' });
+  }
+};
+
+module.exports = { trackTrade, afterBuyStock, preTradeCheck, postTradeUpdate };
