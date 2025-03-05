@@ -105,68 +105,48 @@ const preTradeCheck = async (req, res, next) => {
     const userId = req.user.id;
 
     if (!stockSymbol || !amount || !price || !type) {
-      return res.status(400).json({ error: 'Missing required trade fields.' });
+      return res.status(400).json({ error: 'Missing required fields.' });
     }
 
     const parsedAmount = parseFloat(amount);
-    const parsedPrice = parseFloat(price).toFixed(8);
+    const parsedPrice = parseFloat(price);
+    const cost = parsedAmount * parsedPrice;
 
-    if (isNaN(parsedAmount) || parsedAmount <= 0 || isNaN(parsedPrice) || parsedPrice <= 0) {
-      return res.status(400).json({ error: 'Invalid amount or price.' });
-    }
-
-    const cost = parseFloat((amount * price).toFixed(8));
-
-    const balance = parseFloat(await User.getBalance(req.user.id)); // Ensure Float(8)
-
+    console.log(`🔍 Pre-Trade Check - ${type.toUpperCase()} ${parsedAmount} ${stockSymbol} @ ${parsedPrice}`);
+    
     if (type === 'buy') {
-
+      const balance = await User.getBalance(userId);
       if (balance < cost) {
-        console.alert("Insufficient funds!")
-        return res.status(400).json({ error: 'Insufficient funds to buy this stock.' });
+        return res.status(400).json({ error: 'Insufficient funds for this trade.' });
       }
     } else if (type === 'sell') {
       const userAssetAmount = await UserAssets.getAssetAmount(userId, stockSymbol);
-      console.log("user asset amount: ", userAssetAmount)
-      if (userAssetAmount < parsedAmount) {
+      if (userAssetAmount === null || userAssetAmount < parsedAmount) {
         return res.status(400).json({ error: `Not enough ${stockSymbol} to sell.` });
       }
     }
 
-    res.locals.tradeData = { userId, stockSymbol, parsedAmount, parsedPrice, cost, balance, type };
-    next(); 
+    // Store trade data for use in next middleware
+    res.locals.tradeData = { userId, stockSymbol, parsedAmount, parsedPrice, cost, type };
+    next();
   } catch (error) {
-    console.error('❌ Error in preTradeCheck:', error.message);
-    res.status(500).json({ error: 'Trade validation failed. Try again later.' });
+    console.error('❌ Pre-Trade Check Error:', error.message);
+    res.status(500).json({ error: 'Trade validation failed.' });
   }
 };
-
 const postTradeUpdate = async (req, res) => {
-  console.log("in postTradeUpdate")
   try {
-    const { userId, stockSymbol, parsedAmount, parsedPrice, cost, type } = res.locals.tradeData;
+    const { userId, stockSymbol, parsedAmount, parsedPrice, type } = res.locals.tradeData;
     const trade = res.locals.trade;
 
-    let portfolio = await UserPortfolio.getPortfolioBySymbol(userId, stockSymbol);
-    console.log("portfolio: ", portfolio)
+    console.log(`🔄 Processing post-trade update for ${stockSymbol} - Type: ${type}`);
 
-    if (type === 'buy') {
-      if (portfolio) {
-        const newTotalAmount = portfolio.total_amount + parsedAmount;
-        const newTotalSpent = portfolio.total_spent + cost;
-        const newAvgCost = newTotalSpent / newTotalAmount;
-        await UserPortfolio.updatePortfolio(userId, stockSymbol, newTotalAmount, newTotalSpent, newAvgCost);
-      } else {
-        await UserPortfolio.createPortfolio(userId, stockSymbol, parsedAmount, cost, parsedPrice);
-      }
-    } else if (type === 'sell') {
-      const newTotalAmount = portfolio.total_amount - parsedAmount;
-      const newTotalEarned = portfolio.total_earned + cost;
-      const newProfitLoss = portfolio.profit_loss + (cost - parsedAmount * portfolio.avg_cost_per_unit);
-      await UserPortfolio.updatePortfolioAfterSell(userId, stockSymbol, newTotalAmount, newTotalEarned, newProfitLoss);
-    }
+    // Update or create portfolio entry
+    await UserPortfolio.updatePortfolioOnTrade(userId, stockSymbol, type, parsedAmount, parsedPrice);
 
+    console.log(`✅ Portfolio successfully updated for ${stockSymbol}`);
     res.status(201).json({ msg: 'Trade completed successfully', trade });
+
   } catch (error) {
     console.error('❌ Error updating portfolio:', error.message);
     res.status(500).json({ error: 'Trade executed, but post-processing failed.' });

@@ -12,37 +12,46 @@ const calculateScore = (type, amount, price) => {
 };
 // Buy Stock
 exports.buyStock = async (req, res, next) => {
-  console.log("in buystock")
-  try {
-    const { userId, stockSymbol, parsedAmount, parsedPrice, cost, balance } = res.locals.tradeData;
+  console.log("🚀 In buyStock middleware");
 
-    if (!stockSymbol || !parsedAmount || !parsedPrice) {
-      return res.status(400).json({ error: 'Missing required fields' });
+  try {
+    const { userId, stockSymbol, parsedAmount, parsedPrice, cost } = res.locals.tradeData;
+    const balance = await User.getBalance(userId)
+    console.log(balance)
+
+    // Ensure required fields exist
+    if (!stockSymbol || !parsedAmount || !parsedPrice || balance === undefined) {
+      return res.status(400).json({ error: 'Missing required fields or balance issue.' });
     }
 
-    const newBalance = (balance - cost).toFixed(8);
-    console.log(newBalance)
-    await User.updateBalance(userId, newBalance); // Deduct cost from balance
-    console.log("balance updated")
+    // 🔹 Calculate and update user balance
+    const newBalance = parseFloat((balance - cost).toFixed(8));
+    console.log(`💰 New Balance: ${newBalance}`);
+    await User.updateBalance(userId, newBalance);
+    console.log("✅ Balance updated");
 
+    // 🔹 Create the trade object
     const trade = {
-      userId: req.user.id,
+      userId,
       type: 'buy',
       stockSymbol,
-      amount:parsedAmount,
-      price:parsedPrice,
+      amount: parsedAmount,
+      price: parsedPrice,
       date: new Date().toISOString(),
     };
 
+    // 🔹 Update User Assets
     await UserAssets.addOrUpdateAsset(userId, stockSymbol, parsedAmount);
-    console.log("assets updated.")
+    console.log("✅ User assets updated");
 
-    res.locals.trade = trade; // Pass trade data to next middleware
-    console.log("next")
+    // 🔹 Pass trade data to the next middleware
+    res.locals.trade = trade;
+    console.log("🔄 Passing trade to next middleware");
+
     next();
   } catch (err) {
-    console.error('Error recording buy trade:', err.message || err);
-    res.status(500).json({ error: 'Failed to record buy trade. Please try again later.' });
+    console.error('❌ Error in buyStock middleware:', err.message || err);
+    res.status(500).json({ error: 'Failed to process buy trade. Please try again later.' });
   }
 };
 
@@ -84,7 +93,8 @@ exports.sellStock = async (req, res) => {
     console.log("asset reduced.")
     
 
-    const scoreChange = calculateScore('sell', amount, price);
+    const scoreChange = Math.round(calculateScore('sell', amount, price));
+    console.log("score change: ", scoreChange, "type: ", typeof(scoreChange));
     await updateScore(req.user.id, scoreChange, 'Executed a sell trade');
 
     res.status(201).json({
