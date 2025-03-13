@@ -114,7 +114,7 @@ const TradeForm = () => {
       await tradeService.buyStock(trade);
       alert('Trade executed successfully');
     } catch (error) {
-      alert('Trade failed. Please try again.');
+      alert(error.response.data.error);
     }
   };
 
