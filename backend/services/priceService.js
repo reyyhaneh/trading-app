@@ -79,7 +79,6 @@ const getCurrentPrices = async (symbols) => {
       prices[symbol] = response.data[coinGeckoId]?.usd ?? null; // Return null if missing
     });
 
-    console.log("✅ Final Price Mapping:", JSON.stringify(prices, null, 2));
 
     return prices;
   } catch (error) {

@@ -1,3 +1,4 @@
+const User = require('../models/User');
 const UserTask = require('../models/UserTask');
 
 exports.getUserProgress = async (req, res) => {
@@ -35,4 +36,17 @@ exports.updateTaskProgress = async (req, res) => {
     console.error('Error updating task progress:', error);
     res.status(500).json({ error: 'Server error' });
   }
+};
+
+
+exports.updateProgressOnTrade = async(req, res) => {
+  const userId = req.user.id;
+
+  const task = await UserTask.getUserCurrentTask(userId)
+  
+
+  
+
+
+
 };

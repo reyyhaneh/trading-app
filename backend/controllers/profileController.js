@@ -51,7 +51,6 @@ exports.getProfitLoss = async (req, res) => {
     const portfolio  = await UserPortfolio.getPortfolio(req.user.id)
 
     // Log portfolio details
-    console.log('📊 User Portfolio:', JSON.stringify(portfolio, null, 2));
 
     // Get symbols for price check
     const assetSymbols = portfolio.map(item => item.stock_symbol);
@@ -77,8 +76,6 @@ exports.getProfitLoss = async (req, res) => {
       const currentPrice = parseFloat(prices[stock_symbol]) || 0;
       const currentValue = safeTotalAmount * currentPrice;
 
-      console.log(`🔢 Debug: Calculating Profit/Loss for ${stock_symbol}`);
-      console.log({ safeTotalAmount, safeTotalSpent, safeTotalEarned, safeAvgCostPerUnit, safeProfitLoss });
     
       return {
         assetSymbol: stock_symbol,
@@ -92,7 +89,6 @@ exports.getProfitLoss = async (req, res) => {
     });
     
 
-    console.log('✅ Final Profit/Loss Results:', JSON.stringify(profitLossResults, null, 2));
 
     res.json({ profitLossResults });
   } catch (err) {

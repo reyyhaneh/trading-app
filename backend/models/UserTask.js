@@ -11,7 +11,30 @@ class UserTask {
     const { rows } = await pool.query(query, [userId]);
     return rows;
   }
-  
+
+  static async getIncompleteUserTasks(userId) {
+    const query = `
+      SELECT * FROM user_tasks 
+      WHERE user_id = $1 AND completed = FALSE
+      ORDER BY created_at DESC;
+    `;
+    const { rows } = await pool.query(query, [userId]);
+    return rows;
+  }
+
+  // retreives the latest incomplete trade task
+  static async getLatestTradeTask(userId) {
+    const query = `
+      SELECT * FROM user_tasks
+      WHERE user_id = $1 AND task_name ~ '^Make \\d+ Trades$' AND completed = FALSE
+      ORDER BY created_at DESC
+      LIMIT 1;
+    `;
+    const { rows } = await pool.query(query, [userId]);
+    return rows.length ? rows[0] : null; // Return the latest task or null if not found
+  }
+
+
 
   static async createTask(userId, taskName) {
     const query = `

@@ -2,6 +2,8 @@ const { findByEmail, create, verifyEmail} = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const messages = require("../utils/messages");
+
 
 const nodemailer = require('nodemailer');
 
@@ -15,7 +17,7 @@ exports.register = async (req, res) => {
     // Check if the user already exists
     const existingUser = await findByEmail(email);
     if (existingUser) {
-      return res.status(400).json({ msg: 'User already exists' });
+      return res.status(400).json({ msg: messages.AUTH.USER_EXISTS });
     }
 
     // Hash the password
@@ -169,7 +171,7 @@ exports.verifyEmail = async (req, res) => {
     // Update the user's email verification status
     const updatedUser = await verifyEmail(email); // Update the user in the database
 
-    res.status(200).json({ msg: 'Email verified successfully. Please login.', user: updatedUser });
+    res.status(200).json({ msg: messages.AUTH.EMAIL_VERIFIED, user: updatedUser });
   } catch (error) {
     console.error('Error verifying email:', error);
 

@@ -2,6 +2,7 @@ const UserTask = require('../models/UserTask');
 const User = require('../models/User'); // Ensure this model allows fetching the user's balance.
 const UserAssets = require('../models/UserAssets');
 const UserPortfolio = require('../models/UserPortfolio');
+const messages = require('../utils/messages')
 
 const trackTrade = async (req, res, next) => {
   try {
@@ -25,7 +26,7 @@ const trackTrade = async (req, res, next) => {
       const totalCost = parseFloat((amount * price).toFixed(8));
       if (balance < totalCost) {
         console.log('❌ Insufficient Funds:', { balance, totalCost });
-        return res.status(400).json({ error: 'Insufficient funds for this trade.' });
+        return res.status(400).json({ error: messages.TRADE.INSUFFICIENT_FUNDS});
       }
     }
     if (type === 'sell') {
@@ -42,7 +43,6 @@ const trackTrade = async (req, res, next) => {
       console.log(`🔍 user wants to sell: ${requestedAmount} (${typeof requestedAmount}) ${stockSymbol}s`);
       
       if (requestedAmount > availableAmount) {
-        console.log('🔴 DEBUG: Amount Check Failed');
         console.log(`❌ Insufficient Assets to Sell: user has ${availableAmount}, wants to sell ${requestedAmount}`);
         return res.status(400).json({ error: `Not enough ${stockSymbol} to sell.` });
       } else {
@@ -103,15 +103,34 @@ const preTradeCheck = async (req, res, next) => {
   try {
     const { stockSymbol, amount, price, type } = req.body;
     const userId = req.user.id;
+    console.log("user id: ", userId)
 
     if (!stockSymbol || !amount || !price || !type) {
       return res.status(400).json({ error: 'Missing required fields.' });
     }
 
+
     const parsedAmount = parseFloat(amount);
     const parsedPrice = parseFloat(price);
     const cost = parsedAmount * parsedPrice;
 
+    if (parsedAmount <= 0) {
+      return res.status(400).json({ error: 'Trade amount must be greater than zero.' });
+    }
+    const portfolio = await UserPortfolio.getPortfolioBySymbol(userId, stockSymbol)
+    console.log("user portfolio: ", portfolio)
+    if (portfolio) {    
+        const assetAmount = await UserAssets.getAssetAmount(userId, stockSymbol);
+        const portfolioAmount = portfolio.total_amount
+
+        console.log("asset amount: ", assetAmount);
+        console.log("portfolio amount: ", portfolioAmount.total_amount);
+        if (assetAmount !== portfolioAmount.total_amount) {
+            console.warn(`⚠️ Inconsistency detected for ${stockSymbol}: Assets = ${assetAmount}, Portfolio = ${portfolioAmount}`);
+            return res.status(400).json({ error: 'Inconsistency detected for user asstes and portfoilio.'})
+          }
+    }
+    
     console.log(`🔍 Pre-Trade Check - ${type.toUpperCase()} ${parsedAmount} ${stockSymbol} @ ${parsedPrice}`);
     
     if (type === 'buy') {
@@ -126,8 +145,35 @@ const preTradeCheck = async (req, res, next) => {
       }
     }
 
+    const tradeTask = await UserTask.getLatestTradeTask(userId);
+    // const newProgress = 0;
+    
+    let newProgress = 0;
+
+    if (tradeTask) {
+      const match = tradeTask.task_name.match(/\d+/); // Extract N from "Make N Trades"
+      if (match) {
+        const totalRequiredTrades = parseInt(match[0]); // Extract N
+        const progressIncrease = 100 / totalRequiredTrades; // Each trade contributes to progress
+
+        console.log(`📈 Current Task: ${tradeTask.task_name}`);
+        console.log(`🔹 Each trade adds ${progressIncrease.toFixed(2)}% progress.`);
+
+
+        newProgress = tradeTask.progress + progressIncrease;
+
+      }
+    } else {
+      console.warn(`⚠️ No active trade-related task found for user ${userId}`);
+    }
+
+    console.log("calculated new progress = ", newProgress)
+
+
+
+
     // Store trade data for use in next middleware
-    res.locals.tradeData = { userId, stockSymbol, parsedAmount, parsedPrice, cost, type };
+    res.locals.tradeData = { userId, stockSymbol, parsedAmount, parsedPrice, cost, type, newProgress };
     next();
   } catch (error) {
     console.error('❌ Pre-Trade Check Error:', error.message);
@@ -145,6 +191,23 @@ const postTradeUpdate = async (req, res) => {
     await UserPortfolio.updatePortfolioOnTrade(userId, stockSymbol, type, parsedAmount, parsedPrice);
 
     console.log(`✅ Portfolio successfully updated for ${stockSymbol}`);
+
+    const tasks = await UserTask.getIncompleteUserTasks(userId);
+    const tradeTask = tasks.find(task => /^Make (\d+) Trades$/i.test(task.task_name));
+
+    if (tradeTask) {
+      const match = tradeTask.task_name.match(/^Make (\d+) Trades$/i);
+      if (match) {
+        const totalRequiredTrades = parseInt(match[1]); // Extracts N from "Make N Trades"
+        const progressIncrease = 100 / totalRequiredTrades; // Calculate progress per trade
+
+        console.log(`📈 Updating task progress for: ${tradeTask.task_name}`);
+        console.log(`📝 Task requires ${totalRequiredTrades} trades. Each trade adds ${progressIncrease.toFixed(2)}% progress.`);
+
+        await UserTask.updateProgress(userId, tradeTask.task_name, tradeTask.progress + progressIncrease);
+      }
+    }
+
     res.status(201).json({ msg: 'Trade completed successfully', trade });
 
   } catch (error) {

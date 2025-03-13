@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, cache } from 'react';
 import tradeService from '../services/TradeService';
 import priceService from '../services/priceService';
 import { debounce } from 'lodash';
 
 const TradeForm = () => {
+  const CACHE_DURATION_MS = 60000; // 1 minute (default)
+  const FETCH_INTERVAL_MS = 60000; // 1 minute (default)
   const [symbol, setSymbol] = useState('BTC'); // Default symbol
   const [amount, setAmount] = useState('');
   const [price, setPrice] = useState('');
@@ -15,7 +17,7 @@ const TradeForm = () => {
 
   /** Fetches price from backend */
   const fetchPrice = useCallback(
-    debounce(async (symbol) => {
+    debounce(async (symbol) => {;
       setLoadingPrice(true);
       setPriceError(null);
 
@@ -26,11 +28,29 @@ const TradeForm = () => {
           setLoadingPrice(false);
           return;
         }
-        const { token } = user;
-        const fetchedPrice = await priceService.getCurrentPrice(symbol, token);
 
-        setCurrentPrice(parseFloat(fetchedPrice).toFixed(8)); // Ensure 8 decimal places
-        setPrice(parseFloat(fetchedPrice).toFixed(8)); // Ensure unit price is float(8)
+        const { token } = user;
+
+        const cachedPriceData = JSON.parse(localStorage.getItem(`price_${symbol}`));
+        const now = Date.now();
+
+        if (cachedPriceData && (now - cachedPriceData.timestamp) < CACHE_DURATION_MS) {
+          console.log(`⚡ Using cached price for ${symbol}: ${cachedPriceData.price}`);
+          setCurrentPrice(cachedPriceData.price);
+          setPrice(cachedPriceData.price);
+          setLoadingPrice(false);
+          return;
+        }
+
+
+        console.log(`🌍 Fetching new price for ${symbol}`);
+        const fetchedPrice = await priceService.getCurrentPrice(symbol, token);
+        const priceFormatted = parseFloat(fetchedPrice).toFixed(8);
+
+        localStorage.setItem(`price_${symbol}`, JSON.stringify({ price: priceFormatted, timestamp: now }));
+
+        setCurrentPrice(priceFormatted); // Ensure 8 decimal places
+        setPrice(priceFormatted); // Ensure unit price is float(8)
       } catch (error) {
         setPriceError('Failed to fetch the current price. Please try again.');
         setCurrentPrice('');
@@ -52,7 +72,7 @@ const TradeForm = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       fetchPrice(symbol);
-    }, 60000); // Fetch price every 60 seconds
+    }, FETCH_INTERVAL_MS); // Fetch price every 60 seconds
 
     return () => clearInterval(interval); // Cleanup interval on unmount
   }, [symbol]);
