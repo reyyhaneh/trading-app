@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const UserPortfolio = require('./UserPortfolio');
+const UserTask = require('./UserTask')
 
 class Trade {
   static async addTrade(trade) {
@@ -164,35 +165,8 @@ class Trade {
     console.log("📈 Portfolio Updated:", stockSymbol);
 
       /** 5️⃣ Update Task Progress */
-      console.log("new progress value: ", newProgress)
-      
-      const taskQuery = `
-        UPDATE user_tasks
-        SET progress = LEAST($1, 100), 
-            completed = CASE WHEN $1 >= 100 THEN TRUE ELSE completed END,
-            updated_at = NOW()
-        WHERE user_id = $2 AND task_name = $3 AND completed = FALSE
-        RETURNING completed;
-      `;
+      await UserTask.updateProgressWithinClient(client, userId, taskName, newProgress);
 
-      const { rows: taskRows } = await client.query(taskQuery, [newProgress, userId, taskName]);
-      
-      if (taskRows.length && taskRows[0].completed) {
-        console.log("🎯 Task Completed:", taskName);
-        
-        // Assign a new incremented task
-        const nextTradeCount = parseInt(taskName.match(/\d+/)[0]) + 5;
-        const newTaskName = `Make ${nextTradeCount} Trades`;
-        
-        // Prevent duplicate task assignment
-        const existingTaskQuery = `SELECT 1 FROM user_tasks WHERE user_id = $1 AND task_name = $2;`;
-        const { rowCount } = await client.query(existingTaskQuery, [userId, newTaskName]);
-
-        if (rowCount === 0) {
-          await client.query(`INSERT INTO user_tasks (user_id, task_name) VALUES ($1, $2);`, [userId, newTaskName]);
-          console.log("🆕 New Task Assigned:", newTaskName);
-        }
-      }
 
       await client.query('COMMIT');
       console.log("✅ Transaction Committed Successfully");

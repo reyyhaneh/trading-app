@@ -118,19 +118,19 @@ const preTradeCheck = async (req, res, next) => {
       return res.status(400).json({ error: 'Trade amount must be greater than zero.' });
     }
     const portfolio = await UserPortfolio.getPortfolioBySymbol(userId, stockSymbol)
-    console.log("user portfolio: ", portfolio)
+    console.log("user portfolio total amount: ", portfolio.total_amount)
     if (portfolio) {    
         const assetAmount = await UserAssets.getAssetAmount(userId, stockSymbol);
         const portfolioAmount = portfolio.total_amount
 
         console.log("asset amount: ", assetAmount);
-        console.log("portfolio amount: ", portfolioAmount.total_amount);
-        if (assetAmount !== portfolioAmount.total_amount) {
+        console.log("portfolio amount: ", portfolioAmount);
+        if (assetAmount !== portfolioAmount) {
             console.warn(`⚠️ Inconsistency detected for ${stockSymbol}: Assets = ${assetAmount}, Portfolio = ${portfolioAmount}`);
             return res.status(400).json({ error: 'Inconsistency detected for user asstes and portfoilio.'})
           }
     }
-    
+
     console.log(`🔍 Pre-Trade Check - ${type.toUpperCase()} ${parsedAmount} ${stockSymbol} @ ${parsedPrice}`);
     
     if (type === 'buy') {
@@ -173,7 +173,7 @@ const preTradeCheck = async (req, res, next) => {
 
 
     // Store trade data for use in next middleware
-    res.locals.tradeData = { userId, stockSymbol, parsedAmount, parsedPrice, cost, type, newProgress };
+    res.locals.tradeData = { userId, stockSymbol, parsedAmount, parsedPrice, cost, type, tradeTask, newProgress };
     next();
   } catch (error) {
     console.error('❌ Pre-Trade Check Error:', error.message);

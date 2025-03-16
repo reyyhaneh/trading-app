@@ -5,79 +5,41 @@ class UserTask {
     const query = `
       SELECT * FROM user_tasks 
       WHERE user_id = $1 
-      ORDER BY created_at DESC 
+      ORDER BY created_at DESC
       LIMIT 5;
     `;
     const { rows } = await pool.query(query, [userId]);
     return rows;
   }
 
-  static async getIncompleteUserTasks(userId) {
-    const query = `
-      SELECT * FROM user_tasks 
-      WHERE user_id = $1 AND completed = FALSE
-      ORDER BY created_at DESC;
-    `;
-    const { rows } = await pool.query(query, [userId]);
-    return rows;
-  }
 
-  // retreives the latest incomplete trade task
-  static async getLatestTradeTask(userId) {
+  static async getLatestTaskByType(userId, taskType) {
     const query = `
       SELECT * FROM user_tasks
-      WHERE user_id = $1 AND task_name ~ '^Make \\d+ Trades$' AND completed = FALSE
+      WHERE user_id = $1 AND task_type = $2 AND completed = FALSE
       ORDER BY created_at DESC
       LIMIT 1;
     `;
-    const { rows } = await pool.query(query, [userId]);
-    return rows.length ? rows[0] : null; // Return the latest task or null if not found
+    const { rows } = await pool.query(query, [userId, taskType]);
+    return rows.length ? rows[0] : null;
   }
 
-
-
-  static async createTask(userId, taskName) {
+  static async createTask(userId, taskType, goal) {
     const query = `
-      INSERT INTO user_tasks (user_id, task_name)
-      VALUES ($1, $2)
+      INSERT INTO user_tasks (user_id, task_type, goal)
+      VALUES ($1, $2, $3)
       RETURNING *;
     `;
-    const { rows } = await pool.query(query, [userId, taskName]);
+    const { rows } = await pool.query(query, [userId, taskType, goal]);
     return rows[0];
   }
-  static async updateProgress(userId, taskName, newProgress) {
-    const query = `
-      UPDATE user_tasks
-      SET progress = LEAST($1, 100),  -- Set new progress, ensuring it does not exceed 100%
-          completed = CASE WHEN $1 >= 100 THEN TRUE ELSE completed END,
-          updated_at = NOW()
-      WHERE user_id = $2 AND task_name = $3 AND completed = FALSE
-      RETURNING *;
-    `;
-  
-    const { rows } = await pool.query(query, [newProgress, userId, taskName]);
-    const updatedTask = rows[0];
-  
-    // If task is completed, assign a new task dynamically
-    if (updatedTask && updatedTask.completed) {
-  
-      const tradeCountMatch = updatedTask.task_name.match(/\d+/);
-      if (tradeCountMatch) {
-        const nextTradeCount = parseInt(tradeCountMatch[0]) + 5;
-        const newTaskName = `Make ${nextTradeCount} Trades`;
-  
-        // Ensure we don't duplicate an already existing task
-        const existingTasks = await UserTask.getUserTasks(userId);
-        const duplicateTask = existingTasks.find(task => task.task_name === newTaskName);
-  
-        if (!duplicateTask) {
-          await UserTask.createTask(userId, newTaskName);
-        }
-      }
-    }
-  
-    return updatedTask;
+
+  static async updateProgressWithinClient(client, userId, taskType, progressIncrement) {
+    
   }
+
+
+
     
 }
 
