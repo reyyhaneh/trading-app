@@ -4,8 +4,9 @@ const UserTask = require('../models/UserTask');
 exports.getUserProgress = async (req, res) => {
   try {
     const userId = req.user.id;
-    const tasks = await UserTask.getUserTasks(userId);
-    res.json({ tasks });
+    const tasks = await UserTask.getFormattedTasks(userId);
+    console.log("tasks: ", tasks)
+    res.json( {tasks} );
   } catch (error) {
     console.error('Error fetching user progress:', error);
     res.status(500).json({ error: 'Server error' });

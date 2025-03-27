@@ -71,8 +71,6 @@ class Trade {
     quantity,
     price,
     stockSymbol,
-    taskName,
-    newProgress,
   ) {
     const client = await pool.connect();
     
@@ -152,7 +150,6 @@ class Trade {
                                   ELSE 0 
                                 END,
             updated_at = NOW();
-
     `;
 
     const totalSpent = tradeType === 'buy' ? quantity * price : 0;
@@ -164,12 +161,21 @@ class Trade {
 
     console.log("📈 Portfolio Updated:", stockSymbol);
 
-      /** 5️⃣ Update Task Progress */
-      await UserTask.updateProgressWithinClient(client, userId, taskName, newProgress);
+    /** 5️⃣ Update Task Progress */
+    await UserTask.updateProgressWithinClient(client, userId);
+
+    /** insert trade to database */
+    await client.query(`
+      INSERT INTO trades (user_id, stock_symbol, type, amount, price, date)
+      VALUES ($1, $2, $3, $4, $5, NOW())
+    `, [userId, stockSymbol, tradeType, quantity, price]);
 
 
       await client.query('COMMIT');
       console.log("✅ Transaction Committed Successfully");
+
+
+
 
     } catch (error) {
       await client.query('ROLLBACK');

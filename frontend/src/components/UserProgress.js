@@ -52,20 +52,21 @@ const UserProgress = () => {
       <div>
         <p className="text-gray-700 font-medium">Challenges</p>
         <ul className="mt-2">
-          {tasks.map((task, index) => (
-            <li key={index} className="mb-4">
-              <p className="text-sm text-gray-600">{task.task_name}</p>
-              <div className="w-full bg-gray-200 rounded-full h-3 mt-1">
-                <div
-                  className={`h-3 rounded-full ${task.completed ? 'bg-green-500' : 'bg-blue-500'}`}
-                  style={{ width: `${Math.min(task.progress, 100)}%` }}
-                ></div>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                {task.progress}% completed {task.completed ? '✅' : ''}
-              </p>
-            </li>
-          ))}
+        {tasks.map(task => (
+          <li key={task.id} className="mb-4">
+            <p className="text-sm text-gray-600">{task.name}</p>
+            <div className="w-full bg-gray-200 rounded-full h-3 mt-1">
+              <div
+                className={`h-3 rounded-full ${task.completed ? 'bg-green-500' : 'bg-blue-500'}`}
+                style={{ width: `${Math.min(task.progress, 100)}%` }}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {task.progress}% completed {task.completed ? '✅' : ''}
+            </p>
+          </li>
+        ))}
+
         </ul>
       </div>
     </div>

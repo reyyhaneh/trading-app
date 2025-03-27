@@ -64,15 +64,14 @@ const calculateScore = (type, amount, price) => {
 
 exports.buyStock = async (req, res) => {
   try {
-    const { userId, stockSymbol, parsedAmount, parsedPrice, tradeTask, newProgress } = res.locals.tradeData;
-    const taskName = tradeTask.task_name;
-    console.log("task name; ", taskName)
+    const { userId, stockSymbol, parsedAmount, parsedPrice } = res.locals.tradeData;
+
     const newBalance = await User.getBalance(userId) - (parsedAmount * parsedPrice);
     console.log("new balance: ", newBalance)
     const scoreChange = Math.round(parsedAmount * parsedPrice * 0.01); // Score logic
     console.log("score change: ", scoreChange)
 
-    await Trade.execute(userId, newBalance, stockSymbol, parsedAmount, scoreChange, "buy", parsedAmount, parsedPrice, stockSymbol, taskName, newProgress);
+    await Trade.execute(userId, newBalance, stockSymbol, parsedAmount, scoreChange, "buy", parsedAmount, parsedPrice, stockSymbol);
 
     res.status(201).json({ msg: 'Trade executed successfully' });
   } catch (error) {
@@ -83,14 +82,13 @@ exports.buyStock = async (req, res) => {
 
 exports.sellStock = async (req, res) => {
   try {
-    const { userId, stockSymbol, parsedAmount, parsedPrice, tradeTask, newProgress } = res.locals.tradeData;
-    const taskName = tradeTask.task_name;
+    const { userId, stockSymbol, parsedAmount, parsedPrice } = res.locals.tradeData;
     const newBalance = await User.getBalance(userId) + (parsedAmount * parsedPrice);
     console.log("new balance: ", newBalance)
     const scoreChange = Math.round(parsedAmount * parsedPrice * 0.01); // Score logic
     console.log("score change: ", scoreChange)
 
-    await Trade.execute(userId, newBalance, stockSymbol, parsedAmount, scoreChange, "sell", parsedAmount, parsedPrice, stockSymbol, taskName, newProgress);
+    await Trade.execute(userId, newBalance, stockSymbol, parsedAmount, scoreChange, "sell", parsedAmount, parsedPrice, stockSymbol);
 
     res.status(201).json({ msg: 'Trade executed successfully' });
   } catch (error) {

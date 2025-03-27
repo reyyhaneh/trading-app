@@ -26,6 +26,7 @@ class UserPortfolio {
     try {
       const query = 'SELECT * FROM user_portfolio WHERE user_id = $1 AND stock_symbol = $2';
       const { rows } = await pool.query(query, [userId, stockSymbol]);
+      console.log(rows)
       return rows[0] || null;
     } catch (error) {
       console.error(`❌ Error fetching portfolio for ${stockSymbol}:`, error.message || error);
