@@ -19,6 +19,12 @@ const Profile = () => {
     { name: 'Earn 200 XP', progress: 40 },
     { name: 'Refer a Friend', progress: 10 },
   ]);
+  const getUserLevel= (score) => {
+    return Math.floor(0.1 * Math.sqrt(score)); 
+  }
+
+  const level = getUserLevel(score)
+
 
   useEffect(() => {
     const fetchScore = async () => {
@@ -50,8 +56,8 @@ const Profile = () => {
           <p className="text-gray-600 mt-4">
             <span className="font-medium">Email:</span> {user?.email || 'N/A'}
           </p>
-          <p className="text-gray-600">
-            <span className="font-medium">Joined On:</span> {user?.joined || 'Unknown'}
+          <p className="text-gray-600 mt-4">
+            <span className="font-medium">Level:</span> {level}
           </p>
         </div>
 

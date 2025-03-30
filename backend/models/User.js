@@ -1,6 +1,12 @@
 const pool = require('../config/db');
 
+
 const User = {
+
+  getUserLevel(score) {
+    return Math.floor(0.1 * Math.sqrt(score)); 
+  },
+
   async findByEmail(email) {
     try {
       const query = 'SELECT * FROM users WHERE email = $1';

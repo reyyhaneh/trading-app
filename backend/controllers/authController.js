@@ -46,8 +46,8 @@ exports.register = async (req, res) => {
     const newUser = await create(user);  // Store the newly created user object
 
     // After user is created, create the "Make 5 Trades" challenge
-    const taskName = 'Make 5 Trades';  // Default task
-    await createTask(newUser.id, taskName);  // Assign task using newUser.id
+    const taskName = 'make_trades';  // Default task
+    await createTask(newUser.id, taskName, 5);  // Assign task using newUser.id
 
     // Generate an authentication JWT
     const payload = {
