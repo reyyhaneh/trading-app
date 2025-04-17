@@ -4,7 +4,7 @@ import TradeForm from '../components/TradeForm';
 import Watchlist from '../components/Watchlist';
 
 const Dashboard = () => {
-  const [selectedSymbol, setSelectedSymbol] = useState('CME:BTC1!');
+  const [selectedSymbol, setSelectedSymbol] = useState('BTCUSD');
   const [symbolsGroups, setSymbolsGroups] = useState([
     {
       name: 'Custom Watchlist',
