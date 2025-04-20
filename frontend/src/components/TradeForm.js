@@ -161,11 +161,11 @@ const TradeForm = () => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
+    <div className="bg-gray-800 p-6 rounded-lg shadow-md text-white">
       <form className="space-y-4">
         {/* Symbol Selection */}
         <div>
-          <label htmlFor="symbol" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="symbol" className="block text-sm font-medium text-gray-200">
             Select Symbol
           </label>
           <select
@@ -173,7 +173,7 @@ const TradeForm = () => {
             name="symbol"
             value={symbol}
             onChange={handleSymbolChange}
-            className="mt-1 block w-full h-12 text-lg border border-gray-300 rounded-md shadow-sm focus:ring-black focus:border-black sm:text-lg"
+            className="mt-1 block w-full h-12 text-lg bg-gray-700 text-white border border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-lg"
           >
             {symbolsList.map((sym) => (
               <option key={sym} value={sym}>
@@ -182,10 +182,10 @@ const TradeForm = () => {
             ))}
           </select>
         </div>
-
+  
         {/* Amount Input */}
         <div>
-          <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="amount" className="block text-sm font-medium text-gray-200">
             Amount
           </label>
           <input
@@ -194,32 +194,32 @@ const TradeForm = () => {
             name="amount"
             value={amount}
             onChange={handleAmountChange}
-            className="mt-1 block w-full h-12 text-lg border border-gray-300 rounded-md shadow-sm focus:ring-black focus:border-black sm:text-lg"
+            className="mt-1 block w-full h-12 text-lg bg-gray-700 text-white border border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-lg"
             min="0.01"
             step="0.01"
           />
         </div>
-
+  
         {/* Price Display */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-200">
             Unit Price (USD)
           </label>
-          <p className="mt-1 block w-full h-12 text-lg border border-gray-300 rounded-md shadow-sm bg-gray-100 sm:text-lg">
+          <p className="mt-1 block w-full h-12 text-lg bg-gray-700 text-white border border-gray-600 rounded-md shadow-sm sm:text-lg flex items-center px-3">
             ${price}
           </p>
         </div>
-
+  
         {/* Total Cost Display */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-200">
             Total Cost (USD)
           </label>
-          <p className="mt-1 block w-full h-12 text-lg border border-gray-300 rounded-md shadow-sm bg-gray-100 sm:text-lg">
+          <p className="mt-1 block w-full h-12 text-lg bg-gray-700 text-white border border-gray-600 rounded-md shadow-sm sm:text-lg flex items-center px-3">
             ${totalCost}
           </p>
         </div>
-
+  
         {/* Action Buttons */}
         <div className="flex justify-between">
           <button

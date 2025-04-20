@@ -31,7 +31,6 @@ const SearchBar = ({ onSelectSymbol, list }) => {
       handleSelect(suggestions[0]); // Add the first suggestion on Enter
     }
   };
-
   return (
     <div className="relative">
       <input
@@ -40,15 +39,15 @@ const SearchBar = ({ onSelectSymbol, list }) => {
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
         placeholder="Search Symbol"
-        className="w-full p-2 rounded-md border border-gray-300"
+        className="w-full p-2 rounded-md border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
       />
       {suggestions.length > 0 && (
-        <ul className="absolute z-10 bg-white border border-gray-300 rounded-md shadow-md w-full max-h-40 overflow-y-auto">
+        <ul className="absolute z-10 bg-gray-800 border border-gray-600 rounded-md shadow-lg w-full max-h-40 overflow-y-auto">
           {suggestions.map((item, index) => (
             <li
               key={index}
               onClick={() => handleSelect(item)}
-              className="cursor-pointer p-2 hover:bg-gray-200"
+              className="cursor-pointer p-2 hover:bg-gray-700 text-white"
             >
               {item}
             </li>
@@ -56,7 +55,7 @@ const SearchBar = ({ onSelectSymbol, list }) => {
         </ul>
       )}
     </div>
-  );
+  );  
 };
 
 export default SearchBar;

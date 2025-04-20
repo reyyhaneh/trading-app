@@ -10,6 +10,8 @@ import Navbar from './components/Navbar'
 import Profile from './pages/Profile'
 import EmailVerification from './pages/EmailVerification'
 import Welcome from './pages/Welcome'
+import Leaderboard from './pages/Leaderboard'; 
+
 
 
 function App() {
@@ -24,6 +26,8 @@ function App() {
           <Route path="/dashboard" element={<PrivateRoute Component={Dashboard} />} />
           <Route path="/profile" element={<PrivateRoute Component={Profile}/>} />
           <Route path="/verify-email" element= {<EmailVerification />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+
         </Routes>
       </div>
     </Router>

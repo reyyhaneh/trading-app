@@ -22,18 +22,17 @@ const Dashboard = () => {
       return updatedGroups;
     });
   };
-
   return (
-    <div className="container mx-auto my-10 px-4">
+    <div className="container mx-auto my-10 px-4 bg-gray-900 min-h-screen">
       {/* Main Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* TradingView Widget */}
-        <div className="bg-white shadow-md rounded-lg p-6 col-span-2">
+        <div className="bg-gray-800 shadow-lg rounded-xl p-6 col-span-2 text-white">
           <TradingViewWidget selectedSymbol={selectedSymbol} />
         </div>
-
+  
         {/* TradeForm & Watchlist */}
-        <div className="bg-white shadow-md rounded-lg p-6">
+        <div className="bg-gray-800 shadow-lg rounded-xl p-6 text-white">
           <TradeForm selectedSymbol={selectedSymbol} />
           <div className="mt-4">
             <Watchlist

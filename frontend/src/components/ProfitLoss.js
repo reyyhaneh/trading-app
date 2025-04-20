@@ -53,22 +53,21 @@ const ProfitLoss = () => {
 
   if (loading) return <p className="text-center text-gray-500">Loading...</p>;
   if (error) return <p className="text-center text-red-500">{error}</p>;
-
   return (
-    <div className="max-w-md mx-auto p-4 bg-white shadow-md rounded-md">
-      <h3 className="text-lg font-semibold text-gray-800 mb-3">Profit & Loss</h3>
-
+    <div className="max-w-md mx-auto p-4 bg-gray-800 shadow-md rounded-md text-white">
+      <h3 className="text-lg font-semibold mb-3 text-white">Profit & Loss</h3>
+  
       {profitLoss.length > 0 ? (
         <div className="space-y-3">
           {profitLoss.map((asset, index) => (
-            <div key={index} className="flex justify-between items-center p-2 border rounded-md">
+            <div key={index} className="flex justify-between items-center p-2 border border-gray-700 rounded-md bg-gray-900">
               <div className="flex flex-col">
-                <span className="font-medium text-gray-700">{asset.assetSymbol}</span>
-                <span className="text-xs text-gray-500">${parseFloat(asset.currentPrice).toFixed(2)}</span>
+                <span className="font-medium text-white">{asset.assetSymbol}</span>
+                <span className="text-xs text-gray-400">${parseFloat(asset.currentPrice).toFixed(2)}</span>
               </div>
               <div
                 className={`font-medium ${
-                  parseFloat(asset.profitLoss) >= 0 ? "text-green-600" : "text-red-600"
+                  parseFloat(asset.profitLoss) >= 0 ? "text-green-400" : "text-red-400"
                 }`}
               >
                 ${parseFloat(asset.profitLoss).toFixed(2)}
@@ -77,10 +76,11 @@ const ProfitLoss = () => {
           ))}
         </div>
       ) : (
-        <p className="text-center text-gray-500">No trades found.</p>
+        <p className="text-center text-gray-400">No trades found.</p>
       )}
     </div>
   );
+  
 };
 
 export default ProfitLoss;
