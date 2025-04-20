@@ -5,6 +5,7 @@ const UserPortfolio = require('../models/UserPortfolio');
 const messages = require('../utils/messages')
 
 const trackTrade = async (req, res, next) => {
+  console.log("in track trade")
   try {
     const userId = req.user.id;
     

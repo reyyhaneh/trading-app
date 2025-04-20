@@ -12,8 +12,8 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await authService.register({ username, email, password });
       navigate('/verify-email');
+      await authService.register({ username, email, password });
     } catch (error) {
       console.error('Registration failed', error);
 

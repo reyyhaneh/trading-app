@@ -13,7 +13,7 @@ const tradeRoutes = require('./routes/trade');
 const priceRoutes = require('./routes/price');
 const profileRoutes = require('./routes/profile');
 
-const pool = require('./config/db'); // PostgreSQL connection (./db.js)
+const pool = require('./config/db'); 
 
 
 var cors = require('cors')
@@ -22,19 +22,7 @@ app.use(cors())
 app.use(express.json());
 app.use(cookieParser());
 
-// Configure session middleware
-/*
-app.use(session({
-  secret: 'your_secret_key', // Replace with a strong secret key
-  resave: false,
-  saveUninitialized: true,
-  cookie: { secure: false } // Set secure: true if using HTTPS
-}));
-*/
-
-
 // Connect to the database
-// Test Database Connection
 pool.query('SELECT NOW()', (err, res) => {
   if (err) {
     console.error('Database connection failed:', err.stack);

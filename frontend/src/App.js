@@ -8,25 +8,22 @@ import Dashboard from  './pages/Dashboard'
 import BitcoinPrice from './components/BitcoinPrice';
 import Navbar from './components/Navbar'
 import Profile from './pages/Profile'
-//import 'bootstrap/dist/css/bootstrap.min.css';
 import EmailVerification from './pages/EmailVerification'
+import Welcome from './pages/Welcome'
 
 
 function App() {
   return (
     <Router>
-      <div className='App.css'>
+      <div className='App'>
         <Navbar />
-
-      
         <Routes>
+          <Route path="/" element={<Welcome />} /> {/* ⬅️ Add this route for homepage */}
           <Route exact="true" path="/login" element={<Login />} /> 
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<PrivateRoute Component={Dashboard} />} />
           <Route path="/profile" element={<PrivateRoute Component={Profile}/>} />
           <Route path="/verify-email" element= {<EmailVerification />} />
-
-
         </Routes>
       </div>
     </Router>
