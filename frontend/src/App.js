@@ -11,6 +11,7 @@ import Profile from './pages/Profile'
 import EmailVerification from './pages/EmailVerification'
 import Welcome from './pages/Welcome'
 import Leaderboard from './pages/Leaderboard'; 
+import AutoTrading from './pages/AutoTrading'
 
 
 
@@ -27,6 +28,7 @@ function App() {
           <Route path="/profile" element={<PrivateRoute Component={Profile}/>} />
           <Route path="/verify-email" element= {<EmailVerification />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/auto-trading" element={<AutoTrading />} />
 
         </Routes>
       </div>
