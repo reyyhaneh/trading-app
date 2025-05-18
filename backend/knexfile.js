@@ -10,7 +10,7 @@ module.exports = {
       connection: {
         host: 'localhost',       // or 'localhost'
         user: 'reyhaneh',    // e.g., 'postgres'
-        password: '',
+        password: 'njrfiugf',
         database: 'trading_app', // your database name
       },
       migrations: {

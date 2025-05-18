@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api/trades/';
 
+
 const getAuthHeader = () => {
   const user = JSON.parse(localStorage.getItem('user'));
   if (user && user.token) {
@@ -26,9 +27,18 @@ const sellStock = async (trade) => {
   return response.data;
 };
 
+
+const addAutoTradingRule = async (rule) => {
+  const response = await axios.post('http://localhost:5000/api/auto-trading-rules/create',
+   rule,{ headers: getAuthHeader() }
+  );
+  return response.data;
+};
+
 const tradeService = {
   buyStock,
   sellStock,
+  addAutoTradingRule, 
 };
 
 export default tradeService;
