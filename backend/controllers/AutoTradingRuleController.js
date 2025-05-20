@@ -6,11 +6,10 @@ const AutoTradingRuleController = {
 
   // Create a new auto-trading rule
   async createRule(req, res) {
-    const { stockSymbol, conditionType, targetValue, action } = req.body;
+    const { stockSymbol, conditionType, targetValue, action, amount } = req.body;
     const userId = req.user.id; // Assuming userId is coming from the JWT token (req.user)
-
     try {
-      const rule = await AutoTradingRule.createRule({ userId, stockSymbol, conditionType, targetValue, action });
+      const rule = await AutoTradingRule.createRule({ userId, stockSymbol, conditionType, targetValue, action, amount});
       return res.status(201).json({ success: true, rule });
     } catch (error) {
       console.error("❌ Error creating rule:", error.message);

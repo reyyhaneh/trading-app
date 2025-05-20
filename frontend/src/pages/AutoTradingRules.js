@@ -7,6 +7,8 @@ const AutoTradingRules = () => {
   const [actionType, setActionType] = useState('buy');
   const [threshold, setThreshold] = useState('');
   const [error, setError] = useState('');
+  const [amount, setAmount] = useState('');
+
 
   const availableSymbols = ['BTC', 'ETH', 'DOGE'];
   const conditionTypes = ['price', 'profit', 'loss'];
@@ -25,11 +27,12 @@ const AutoTradingRules = () => {
       const user = JSON.parse(localStorage.getItem('user')); // assuming userId is stored here
   
       const rule = {
-        userId: user.id, // or whatever key you're storing
+        userId: user.id,
         stockSymbol: symbol,
         conditionType,
         targetValue: parseFloat(threshold),
         action: actionType,
+        amount: parseFloat(amount),
       };
 
       console.log('auto trading rule: ', rule)
@@ -103,6 +106,18 @@ const AutoTradingRules = () => {
             onChange={(e) => setThreshold(e.target.value)}
             className="w-full p-2 bg-gray-700 text-white rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             placeholder="Enter threshold value"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="amount" className="block text-sm font-medium mb-2">Amount</label>
+          <input
+            type="number"
+            id="amount"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="w-full p-2 bg-gray-700 text-white rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder="Enter amount to buy or sell"
           />
         </div>
 

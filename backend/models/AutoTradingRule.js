@@ -4,14 +4,14 @@ const pool = require('../config/db');
 
 const AutoTradingRule = {
   /** Create a new auto-trading rule */
-  async createRule({ userId, stockSymbol, conditionType, targetValue, action }) {
+  async createRule({ userId, stockSymbol, conditionType, targetValue, action, amount }) {
     try {
       const query = `
-        INSERT INTO auto_trading_rules (user_id, stock_symbol, condition_type, target_value, action, active)
-        VALUES ($1, $2, $3, $4, $5, true)
+        INSERT INTO auto_trading_rules (user_id, stock_symbol, condition_type, target_value, action, amount, active)
+        VALUES ($1, $2, $3, $4, $5, $6, true)
         RETURNING *;
       `;
-      const values = [userId, stockSymbol, conditionType, targetValue, action];
+      const values = [userId, stockSymbol, conditionType, targetValue, action, amount];
 
       const result = await pool.query(query, values);
       return result.rows[0];
