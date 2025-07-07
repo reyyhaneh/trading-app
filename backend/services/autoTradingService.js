@@ -89,6 +89,7 @@ async function executeAutoTrade({ userId, stockSymbol, action, amount, price }) 
   await UserPortfolio.updatePortfolioOnTrade(userId, stockSymbol, action, parsedAmount, parsedPrice);
 
   // Update task progress
+  console.log("portfolio updated ..")
   const tasks = await UserTask.getIncompleteUserTasks(userId);
   const tradeTask = tasks.find(task => /^Make (\d+) Trades$/i.test(task.task_name));
   if (tradeTask) {

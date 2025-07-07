@@ -7,17 +7,7 @@ const pool = require('../config/db'); // ✅ Ensure database connection is impor
 
 const UserPortfolio = require('../models/UserPortfolio');
 
-/*
-Implement a calculator function 
-that calculates the profit / loss
-per each trade.
----
-const calculate = async (trade) => {
-  current btc price = await "coingecko"
-  }
-*/
 
-// Helper function to safely format numbers
 const formatNumber = (value) => {
   return parseFloat(value || 0).toFixed(2);
 };
@@ -47,55 +37,42 @@ const calculateProfitLossOverTime = (trades, currentPrice) => {
 // Calculate profit/loss using average cost
 exports.getProfitLoss = async (req, res) => {
   try {
-    // Get user portfolio
-    const portfolio  = await UserPortfolio.getPortfolio(req.user.id)
-
-    // Log portfolio details
-
-    // Get symbols for price check
+    const portfolio = await UserPortfolio.getPortfolio(req.user.id);
     const assetSymbols = portfolio.map(item => item.stock_symbol);
-    console.log('💹 Fetching Prices for Symbols:', assetSymbols);
-
-    // Fetch current prices
     const prices = await priceService.getCurrentPrices(assetSymbols);
-    console.log('💰 Fetched Prices:', JSON.stringify(prices, null, 2));
 
-    // Calculate profit/loss for each asset
     const profitLossResults = portfolio.map(item => {
       const {
-        stock_symbol, total_amount, total_spent, total_earned,
-        avg_cost_per_unit, profit_loss
+        stock_symbol, total_amount, total_spent, total_earned
       } = item;
-    
-      const safeTotalAmount = !isNaN(parseFloat(total_amount)) ? parseFloat(total_amount) : 0;
-      const safeTotalSpent = !isNaN(parseFloat(total_spent)) ? parseFloat(total_spent) : 0;
-      const safeTotalEarned = !isNaN(parseFloat(total_earned)) ? parseFloat(total_earned) : 0;
-      const safeAvgCostPerUnit = !isNaN(parseFloat(avg_cost_per_unit)) ? parseFloat(avg_cost_per_unit) : 0;
-      const safeProfitLoss = !isNaN(parseFloat(profit_loss)) ? parseFloat(profit_loss) : 0;
 
+      const amount = parseFloat(total_amount || 0);
+      const spent = parseFloat(total_spent || 0);
+      const earned = parseFloat(total_earned || 0);
       const currentPrice = parseFloat(prices[stock_symbol]) || 0;
-      const currentValue = safeTotalAmount * currentPrice;
 
-    
+      const currentValue = amount * currentPrice;
+      const profitLoss = currentValue + earned - spent;
+
       return {
         assetSymbol: stock_symbol,
-        profitLoss: safeProfitLoss.toFixed(2),
-        totalAmount: safeTotalAmount.toFixed(2),
-        totalSpent: safeTotalSpent.toFixed(2),
-        totalEarned: safeTotalEarned.toFixed(2),
-        avgCostPerUnit: safeAvgCostPerUnit.toFixed(2),
+        profitLoss: profitLoss.toFixed(2),
+        totalAmount: amount.toFixed(2),
+        totalSpent: spent.toFixed(2),
+        totalEarned: earned.toFixed(2),
+        avgCostPerUnit: amount > 0 ? (spent / amount).toFixed(2) : "0.00",
         currentPrice: currentPrice.toFixed(2),
+        currentValue: currentValue.toFixed(2),
       };
     });
-    
-
 
     res.json({ profitLossResults });
   } catch (err) {
-    console.error("❌ Error getting profit loss:", err);
-    res.status(500).send("Server error");
+    console.error('🔥 Profit/Loss Calculation Error:', err);
+    res.status(500).json({ message: 'Error calculating profit/loss' });
   }
-};
+};    
+
 
 
 exports.getProfitLossChart = async (req, res) => {
