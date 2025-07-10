@@ -83,7 +83,6 @@ class Trade {
         `UPDATE users SET balance = $2 WHERE id = $1 RETURNING balance;`,
         [userId, newBalance]
       );
-      console.log("💰 Balance Updated:", newBalance);
 
       /** 2️⃣ Update User Asset */
 
@@ -95,10 +94,8 @@ class Trade {
         DO UPDATE SET amount = user_assets.amount + EXCLUDED.amount, updated_at = NOW();
       `;
       await client.query(assetQuery, [userId, assetSymbol, amountToAdd]);
-      console.log("📊 User Asset Updated:", assetSymbol, amountToAdd);
 
       } else if (tradeType === 'sell') {
-        console.log("sell")
         const sellAssetQuery = `
         UPDATE user_assets
         SET amount = CASE 

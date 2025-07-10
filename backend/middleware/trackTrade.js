@@ -5,7 +5,6 @@ const UserPortfolio = require('../models/UserPortfolio');
 const messages = require('../utils/messages')
 
 const trackTrade = async (req, res, next) => {
-  console.log("in track trade")
   try {
     const userId = req.user.id;
     
@@ -32,7 +31,6 @@ const trackTrade = async (req, res, next) => {
     }
     if (type === 'sell') {
       const userAssetAmount = await UserAssets.getAssetAmount(userId, stockSymbol);
-      console.log(`🔍 RAW userAssetAmount from DB:`, userAssetAmount);
     
       if (userAssetAmount === null || userAssetAmount === undefined) {
         return res.status(500).json({ error: `Could not retrieve asset ${stockSymbol} for user.` });
@@ -104,7 +102,6 @@ const preTradeCheck = async (req, res, next) => {
   try {
     const { stockSymbol, amount, price, type } = req.body;
     const userId = req.user.id;
-    console.log("user id: ", userId)
 
     if (!stockSymbol || !amount || !price || !type) {
       return res.status(400).json({ error: 'Missing required fields.' });
@@ -124,8 +121,6 @@ const preTradeCheck = async (req, res, next) => {
         const assetAmount = await UserAssets.getAssetAmount(userId, stockSymbol);
         const portfolioAmount = portfolio.total_amount
 
-        console.log("asset amount: ", assetAmount);
-        console.log("portfolio amount: ", portfolioAmount);
         if (assetAmount !== portfolioAmount) {
             console.warn(`⚠️ Inconsistency detected for ${stockSymbol}: Assets = ${assetAmount}, Portfolio = ${portfolioAmount}`);
             return res.status(400).json({ error: 'Inconsistency detected for user asstes and portfoilio.'})
@@ -187,7 +182,6 @@ const postTradeUpdate = async (req, res) => {
     const { userId, stockSymbol, parsedAmount, parsedPrice, type } = res.locals.tradeData;
     const trade = res.locals.trade;
 
-    console.log(`🔄 Processing post-trade update for ${stockSymbol} - Type: ${type}`);
 
     // Update or create portfolio entry
     await UserPortfolio.updatePortfolioOnTrade(userId, stockSymbol, type, parsedAmount, parsedPrice);
@@ -202,9 +196,6 @@ const postTradeUpdate = async (req, res) => {
       if (match) {
         const totalRequiredTrades = parseInt(match[1]); // Extracts N from "Make N Trades"
         const progressIncrease = 100 / totalRequiredTrades; // Calculate progress per trade
-
-        console.log(`📈 Updating task progress for: ${tradeTask.task_name}`);
-        console.log(`📝 Task requires ${totalRequiredTrades} trades. Each trade adds ${progressIncrease.toFixed(2)}% progress.`);
 
         await UserTask.updateProgress(userId, tradeTask.task_name, tradeTask.progress + progressIncrease);
       }

@@ -5,7 +5,6 @@ exports.getUserProgress = async (req, res) => {
   try {
     const userId = req.user.id;
     const tasks = await UserTask.getFormattedTasks(userId);
-    console.log("tasks: ", tasks)
     res.json( {tasks} );
   } catch (error) {
     console.error('Error fetching user progress:', error);

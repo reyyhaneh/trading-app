@@ -67,9 +67,7 @@ exports.buyStock = async (req, res) => {
     const { userId, stockSymbol, parsedAmount, parsedPrice } = res.locals.tradeData;
 
     const newBalance = await User.getBalance(userId) - (parsedAmount * parsedPrice);
-    console.log("new balance: ", newBalance)
     const scoreChange = Math.round(parsedAmount * parsedPrice * 0.01); // Score logic
-    console.log("score change: ", scoreChange)
 
     await Trade.execute(userId, newBalance, stockSymbol, parsedAmount, scoreChange, "buy", parsedAmount, parsedPrice, stockSymbol);
 
@@ -84,9 +82,7 @@ exports.sellStock = async (req, res) => {
   try {
     const { userId, stockSymbol, parsedAmount, parsedPrice } = res.locals.tradeData;
     const newBalance = await User.getBalance(userId) + (parsedAmount * parsedPrice);
-    console.log("new balance: ", newBalance)
     const scoreChange = Math.round(parsedAmount * parsedPrice * 0.01); // Score logic
-    console.log("score change: ", scoreChange)
 
     await Trade.execute(userId, newBalance, stockSymbol, parsedAmount, scoreChange, "sell", parsedAmount, parsedPrice, stockSymbol);
 
