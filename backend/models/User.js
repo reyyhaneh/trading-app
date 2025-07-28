@@ -61,11 +61,6 @@ const User = {
     }
   },
 
-  /**
-   * Verifies a user's email by updating the is_email_verified field.
-   * @param {string} email - The email of the user to verify.
-   * @returns {Object|null} - The updated user object if successful, otherwise null.
-   */
   async verifyEmail(email) {
     try {
       const query = `
@@ -89,7 +84,6 @@ const User = {
     }
   },
 
-    // Fetch user's score by ID
   async getScore(userId) {
     try {
       const result = await pool.query('SELECT score FROM users WHERE id = $1', [userId]);
@@ -160,3 +154,4 @@ const User = {
 
 
 module.exports = User;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
