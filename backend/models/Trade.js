@@ -172,8 +172,6 @@ class Trade {
       console.log("✅ Transaction Committed Successfully");
 
 
-
-
     } catch (error) {
       await client.query('ROLLBACK');
       console.error("❌ Transaction Rolled Back due to Error:", error.message);

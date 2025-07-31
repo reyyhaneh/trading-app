@@ -8,11 +8,8 @@ async function processAutoTradingRules() {
     const rules = await AutoTradingRule.getAllActiveRules();
 
     if (!rules.length) {
-      console.log('ℹ️ No active auto-trading rules found.');
       return;
     }
-
-    console.log(`🔍 Found ${rules.length} active auto-trading rule(s)`);
 
     for (const rule of rules) {
       const { id, user_id, stock_symbol, condition_type, target_value, action, amount } = rule;
@@ -22,9 +19,8 @@ async function processAutoTradingRules() {
 
         if (condition_type === 'price') {
           currentValue = await PriceService.getCurrentPrice(stock_symbol);
-        } else if (condition_type === 'profit') {
-          //console.warn(`⚠️ Unknown condition_type "${condition_type}" in rule #${id}`);
-
+        } else {
+          console.warn(`⚠️ Unknown condition_type "${condition_type}" in rule #${id}`);
           continue;
         }
 
@@ -35,11 +31,8 @@ async function processAutoTradingRules() {
         console.log(`🔎 Rule #${id}: ${action.toUpperCase()} ${stock_symbol} at ${currentValue} (target: ${target_value})`);
 
         if (!conditionMet) {
-          console.log(`🚫 Condition not met for rule #${id}, skipping.`);
           continue;
         }
-
-        console.log(`✅ Rule triggered. Executing ${action} ${amount} ${stock_symbol} for user ${user_id}...`);
 
         const res = await request(app)
           .post(`/api/trades/${action}`)
@@ -53,7 +46,6 @@ async function processAutoTradingRules() {
           });
 
         if (res.status === 201) {
-          console.log(`✅ Trade successful for rule #${id}:`, res.body);
           await AutoTradingRule.deactivateRule(id);
           console.log(`🔒 Rule #${id} deactivated.`);
         } else {
