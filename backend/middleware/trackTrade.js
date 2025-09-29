@@ -126,7 +126,7 @@ const preTradeCheck = async (req, res, next) => {
 
         console.log("asset amount: ", assetAmount);
         console.log("portfolio amount: ", portfolioAmount);
-        if (assetAmount !== portfolioAmount) {
+        if (Math.abs(assetAmount - portfolioAmount) > 0.000001) {
             console.warn(`⚠️ Inconsistency detected for ${stockSymbol}: Assets = ${assetAmount}, Portfolio = ${portfolioAmount}`);
             return res.status(400).json({ error: 'Inconsistency detected for user asstes and portfoilio.'})
           }
@@ -146,36 +146,7 @@ const preTradeCheck = async (req, res, next) => {
       }
     }
 
-    // const tradeTask = await UserTask.getLatestTaskByType(userId);
-    // // const newProgress = 0;
-    // console.log(tradeTask)
-    
-    // let newProgress = 0;
-
-    // if (tradeTask) {
-    //   const match = tradeTask.task_name.match(/\d+/); // Extract N from "Make N Trades"
-    //   if (match) {
-    //     const totalRequiredTrades = parseInt(match[0]); // Extract N
-    //     const progressIncrease = 100 / totalRequiredTrades; // Each trade contributes to progress
-
-    //     console.log(`📈 Current Task: ${tradeTask.task_name}`);
-    //     console.log(`🔹 Each trade adds ${progressIncrease.toFixed(2)}% progress.`);
-
-
-    //     newProgress = tradeTask.progress + progressIncrease;
-
-    //   }
-    // } else {
-    //   console.warn(`⚠️ No active trade-related task found for user ${userId}`);
-    // }
-
-    // console.log("calculated new progress = ", newProgress)
-
-
-
-
-    // Store trade data for use in next middleware
-    res.locals.tradeData = { userId, stockSymbol, parsedAmount, parsedPrice, cost, type };
+       res.locals.tradeData = { userId, stockSymbol, parsedAmount, parsedPrice, cost, type };
     next();
   } catch (error) {
     console.error('❌ Pre-Trade Check Error:', error.message);
