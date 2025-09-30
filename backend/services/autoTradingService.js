@@ -25,6 +25,7 @@ async function processAutoTradingRules() {
         const conditionMet =
           (action === 'sell' && currentValue >= target_value) ||
           (action === 'buy' && currentValue <= target_value);
+        
     
         if (conditionMet) {
           console.log(`✅ Rule triggered: User ${user_id} ${action} ${stock_symbol}`);
@@ -80,23 +81,12 @@ async function executeAutoTrade({ userId, stockSymbol, action, amount, price }) 
 
   if (action === 'sell') {
     const assetAmount = await UserAssets.getAssetAmount(userId, stockSymbol);
+    
     if (assetAmount === null || assetAmount < parsedAmount) throw new Error(`Not enough ${stockSymbol} to auto-sell`);
     const balance = await User.getBalance(userId);
     await Trade.execute(userId, balance + cost, stockSymbol, parsedAmount, Math.round(cost * 0.01), 'sell', parsedAmount, parsedPrice, stockSymbol);
   }
 
-  // Update portfolio
-  await UserPortfolio.updatePortfolioOnTrade(userId, stockSymbol, action, parsedAmount, parsedPrice);
-
-  // Update task progress
-  console.log("portfolio updated ..")
-  const tasks = await UserTask.getIncompleteUserTasks(userId);
-  const tradeTask = tasks.find(task => /^Make (\d+) Trades$/i.test(task.task_name));
-  if (tradeTask) {
-    const totalRequired = parseInt(tradeTask.task_name.match(/^Make (\d+) Trades$/i)[1]);
-    const progressIncrement = 100 / totalRequired;
-    await UserTask.updateProgress(userId, tradeTask.task_name, tradeTask.progress + progressIncrement);
-  }
 
   console.log(`✅ Auto-trade completed: ${action} ${parsedAmount} ${stockSymbol} @ ${parsedPrice}`);
 }

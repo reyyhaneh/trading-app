@@ -153,40 +153,7 @@ const preTradeCheck = async (req, res, next) => {
     res.status(500).json({ error: 'Trade validation failed.' });
   }
 };
-const postTradeUpdate = async (req, res) => {
-  try {
-    const { userId, stockSymbol, parsedAmount, parsedPrice, type } = res.locals.tradeData;
-    const trade = res.locals.trade;
 
-    console.log(`🔄 Processing post-trade update for ${stockSymbol} - Type: ${type}`);
 
-    // Update or create portfolio entry
-    await UserPortfolio.updatePortfolioOnTrade(userId, stockSymbol, type, parsedAmount, parsedPrice);
 
-    console.log(`✅ Portfolio successfully updated for ${stockSymbol}`);
-
-    const tasks = await UserTask.getIncompleteUserTasks(userId);
-    const tradeTask = tasks.find(task => /^Make (\d+) Trades$/i.test(task.task_name));
-
-    if (tradeTask) {
-      const match = tradeTask.task_name.match(/^Make (\d+) Trades$/i);
-      if (match) {
-        const totalRequiredTrades = parseInt(match[1]); // Extracts N from "Make N Trades"
-        const progressIncrease = 100 / totalRequiredTrades; // Calculate progress per trade
-
-        console.log(`📈 Updating task progress for: ${tradeTask.task_name}`);
-        console.log(`📝 Task requires ${totalRequiredTrades} trades. Each trade adds ${progressIncrease.toFixed(2)}% progress.`);
-
-        await UserTask.updateProgress(userId, tradeTask.task_name, tradeTask.progress + progressIncrease);
-      }
-    }
-
-    res.status(201).json({ msg: 'Trade completed successfully', trade });
-
-  } catch (error) {
-    console.error('❌ Error updating portfolio:', error.message);
-    res.status(500).json({ error: 'Trade executed, but post-processing failed.' });
-  }
-};
-
-module.exports = { trackTrade, afterBuyStock, preTradeCheck, postTradeUpdate };
+module.exports = { trackTrade, afterBuyStock, preTradeCheck };

@@ -60,7 +60,6 @@ const getCurrentPrices = async (symbols) => {
       throw new Error("No valid CoinGecko IDs found for requested symbols.");
     }
 
-    console.log("📡 Requesting prices for:", coinGeckoIds);
 
     // Fetch prices from CoinGecko
     const response = await axios.get(COINGECKO_API_BASE_URL, {
@@ -70,7 +69,6 @@ const getCurrentPrices = async (symbols) => {
       },
     });
 
-    console.log("📥 Raw API Response:", JSON.stringify(response.data, null, 2));
 
     // Build price response ensuring all symbols are included
     const prices = {};
