@@ -49,12 +49,19 @@ class UserTask {
         console.warn(`⚠️ No active make_trades task found for user ${userId}`);
         return null;
       }
-  
       const task = rows[0];
-      const { id, progress, goal } = task;
-  
+      const { id } = task;
+      const progress = parseFloat(task.progress) || 0;
+      const goal = parseInt(task.goal) || 1;
+
+      console.log(`🧪 Task progress debug — progress: ${progress}, goal: ${goal}`);
+
       const progressIncrement = 100 / goal;
-      const newProgress = Math.min(progress + progressIncrement, 100);
+      console.log(`🔧 Calculated increment: ${progressIncrement}`);
+
+      const newProgress = Math.min(progress + progressIncrement, 100); // e.g., 0 + 20 = 20
+      console.log(`📊 New progress: ${newProgress}`);
+
       const completed = newProgress >= 100;
   
       // 2. Update the progress of the task
