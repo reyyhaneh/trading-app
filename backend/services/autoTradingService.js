@@ -1,34 +1,91 @@
 const AutoTradingRule = require('../models/AutoTradingRule');
 const PriceService = require('./priceService');
+const UserPortfolio = require('../models/UserPortfolio')
+
+const EPSILON = 0.01;
 
 async function processAutoTradingRules() {
   try {
     const rules = await AutoTradingRule.getAllActiveRules();
     console.log(`📄 Total active rules: ${rules.length}`);
+
     for (const rule of rules) {
-      const { id, user_id, stock_symbol, condition_type, target_value, action, amount } = rule;
-    
+      const {
+        id, user_id, stock_symbol, condition_type,
+        target_value, action, amount,
+        use_moving_average, lookback_minutes, variance_threshold
+      } = rule;
+          
       console.log(`↪️ Processing rule #${id} for user ${user_id}`);
-    
+      
       try {
         let currentValue;
+        let conditionMet = false;
+
+
     
         if (condition_type === 'price') {
           currentValue = await PriceService.getCurrentPrice(stock_symbol);
-        } else if (condition_type === 'profit') {
-          currentValue = await ProfitService.getUserProfit(user_id, stock_symbol);
-        } else {
+
+          conditionMet =
+          (action === 'sell' && currentValue >= target_value - EPSILON) ||
+          (action === 'buy' && currentValue <= target_value + EPSILON);
+
+        }else if (condition_type === 'profit/loss') {
+          const portfolio = await UserPortfolio.getPortfolioBySymbol(user_id, stock_symbol);
+          if (!portfolio) {
+            console.warn(`⚠️ No portfolio entry found for ${stock_symbol}`);
+            continue;
+          }
+          const currentPrice = await PriceService.getCurrentPrice(stock_symbol);
+
+          const amount = parseFloat(portfolio.total_amount || 0);
+          const spent = parseFloat(portfolio.total_spent || 0);
+          const earned = parseFloat(portfolio.total_earned || 0);
+          const currentValue = amount * currentPrice;
+          const calculatedProfitLoss = currentValue + earned - spent;
+
+          console.log(`📉 Calculated Profit/Loss for ${stock_symbol}: ${calculatedProfitLoss.toFixed(2)} (Target: ${target_value})`);
+                    
+          
+          
+          
+          conditionMet =
+            (action === 'sell' && calculatedProfitLoss >= target_value - EPSILON) ||
+            (action === 'buy' && calculatedProfitLoss <= target_value + EPSILON);
+          
+          currentValue = currentPrice
+
+        }else if (condition_type === 'moving_average'){
+          const prices = await PriceService.getHistoricalPrices(stock_symbol, rule.lookback_minutes);
+          if (!prices.length) {
+            console.warn(`⚠️ No historical prices found for rule #${id}`);
+            continue;
+          }
+          console.log(`📊 Historical prices for ${stock_symbol} (last ${rule.lookback_minutes} min):`, prices);
+
+          const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+          const variance = prices.reduce((sum, price) => sum + Math.pow(price - avg, 2), 0) / prices.length;
+          const stdDeviation = Math.sqrt(variance);
+
+          console.log(`📈 Moving Avg: ${avg.toFixed(2)}, stdDeviation: ${stdDeviation.toFixed(4)}, Threshold: ${rule.variance_threshold}`);
+
+          conditionMet =
+            (action === 'buy' && avg <= target_value+EPSILON && stdDeviation <= rule.variance_threshold) ||
+            (action === 'sell' && avg >= target_value-EPSILON && stdDeviation <= rule.variance_threshold);
+          
+          currentValue = await PriceService.getCurrentPrice(stock_symbol);
+          
+
+        } else{
           console.warn(`⚠️ Unknown condition_type for rule #${id}`);
           continue;
         }
     
-        const conditionMet =
-          (action === 'sell' && currentValue >= target_value) ||
-          (action === 'buy' && currentValue <= target_value);
         
     
         if (conditionMet) {
-          console.log(`✅ Rule triggered: User ${user_id} ${action} ${stock_symbol}`);
+          console.log(`✅ Rule triggered: ${condition_type} | User ${user_id} ${action} ${stock_symbol} @ ${currentValue}`);
     
           await executeAutoTrade({
             userId: user_id,
@@ -61,8 +118,6 @@ module.exports = {
 
 const User = require('../models/User');
 const UserAssets = require('../models/UserAssets');
-const UserPortfolio = require('../models/UserPortfolio');
-const UserTask = require('../models/UserTask');
 const Trade = require('../models/Trade');
 
 async function executeAutoTrade({ userId, stockSymbol, action, amount, price }) {

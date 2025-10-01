@@ -85,9 +85,44 @@ const getCurrentPrices = async (symbols) => {
   }
 };
 
+const COINGECKO_MARKET_CHART_URL = 'https://api.coingecko.com/api/v3/coins';
 
+
+const getHistoricalPrices = async (symbol, minutes = 15, vsCurrency = 'usd') => {
+  try {
+    const coingeckoId = coingeckoSymbolMapping[symbol.toUpperCase()];
+    if (!coingeckoId) {
+      throw new Error(`Unknown CoinGecko symbol mapping for: ${symbol}`);
+    }
+
+    const url = `${COINGECKO_MARKET_CHART_URL}/${coingeckoId}/market_chart`;
+    const params = {
+      vs_currency: vsCurrency,
+      days: 1, 
+    };
+
+    const response = await axios.get(url, { params });
+
+    if (!response.data.prices || !Array.isArray(response.data.prices)) {
+      throw new Error('Invalid data format returned from CoinGecko');
+    }
+
+    const now = Date.now();
+    const cutoff = now - minutes * 60 * 1000;
+
+    const filteredPrices = response.data.prices
+      .filter(([timestamp]) => timestamp >= cutoff)
+      .map(([, price]) => price);
+
+    return filteredPrices;
+  } catch (error) {
+    console.error(`❌ Error fetching historical prices for ${symbol}:`, error.message);
+    return [];
+  }
+};
 
 module.exports = {
   getCurrentPrice,
   getCurrentPrices,
+  getHistoricalPrices
 };

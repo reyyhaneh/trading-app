@@ -8,10 +8,12 @@ const AutoTradingRules = () => {
   const [threshold, setThreshold] = useState('');
   const [error, setError] = useState('');
   const [amount, setAmount] = useState('');
+  const [lookbackMinutes, setLookbackMinutes] = useState('');
+  const [varianceThreshold, setVarianceThreshold] = useState('');
 
 
   const availableSymbols = ['BTC', 'ETH', 'DOGE'];
-  const conditionTypes = ['price', 'profit', 'loss'];
+  const conditionTypes = ['price', 'profit/loss', 'moving average'];
   const actionTypes = ['buy', 'sell'];
 
 
@@ -24,7 +26,7 @@ const AutoTradingRules = () => {
     setError('');
   
     try {
-      const user = JSON.parse(localStorage.getItem('user')); // assuming userId is stored here
+      const user = JSON.parse(localStorage.getItem('user')); 
   
       const rule = {
         userId: user.id,
@@ -33,6 +35,8 @@ const AutoTradingRules = () => {
         targetValue: parseFloat(threshold),
         action: actionType,
         amount: parseFloat(amount),
+        lookbackMinutes: conditionType === 'moving_average' ? parseInt(lookbackMinutes) : null,
+        varianceThreshold: conditionType === 'moving_average' ? parseFloat(varianceThreshold) : null
       };
 
       console.log('auto trading rule: ', rule)
@@ -40,7 +44,12 @@ const AutoTradingRules = () => {
       const result = await tradeService.addAutoTradingRule(rule);
       console.log('✅ Auto-trading rule saved:', result);
       alert('Rule saved successfully!');
+      
+      setSymbol('BTC');
+      setConditionType('price');
+      setActionType('buy');
       setThreshold('');
+      setAmount('');
     } catch (err) {
       console.error('❌ Error:', err.message);
       setError('Failed to save rule.');
@@ -95,10 +104,39 @@ const AutoTradingRules = () => {
             ))}
           </select>
         </div>
+        {conditionType === 'moving average' && (
+        <>
+          <div>
+            <label htmlFor="lookbackMinutes" className="block text-sm font-medium mb-2">Lookback Minutes</label>
+            <input
+              type="number"
+              id="lookbackMinutes"
+              value={lookbackMinutes}
+              onChange={(e) => setLookbackMinutes(e.target.value)}
+              className="w-full p-2 bg-gray-700 text-white rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="e.g. 10"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="varianceThreshold" className="block text-sm font-medium mb-2">Variance Threshold</label>
+            <input
+              type="number"
+              step="0.01"
+              id="varianceThreshold"
+              value={varianceThreshold}
+              onChange={(e) => setVarianceThreshold(e.target.value)}
+              className="w-full p-2 bg-gray-700 text-white rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="e.g. 0.5"
+            />
+          </div>
+        </>
+      )}
+
 
         {/* Threshold Input */}
         <div>
-          <label htmlFor="threshold" className="block text-sm font-medium mb-2">Threshold Value</label>
+          <label htmlFor="threshold" className="block text-sm font-medium mb-2">Target Value</label>
           <input
             type="number"
             id="threshold"
